@@ -15,6 +15,7 @@ import { useGame, getRarity } from "@/contexts/GameContext";
 import { Footballer } from "@/mocks/footballers";
 import { ChevronUp, Plus, Minus, ChevronDown, Flame } from "lucide-react-native";
 import { COLORS } from "@/constants/colors";
+import { trpc } from "@/lib/trpc";
 
 const { width } = Dimensions.get("window");
 
@@ -44,6 +45,11 @@ export default function GameScreen() {
     skipFootballer,
   } = useGame();
 
+  const [gameMode, setGameMode] = useState<"select" | "ia" | "friends" | null>(null);
+  const [multiplayerMode, setMultiplayerMode] = useState<"create" | "join" | null>(null);
+  const [roomCode, setRoomCode] = useState("");
+  const [createdRoomCode, setCreatedRoomCode] = useState("");
+  const [playerName, setPlayerName] = useState("");
   const [numPlayersInput, setNumPlayersInput] = useState("");
   const [playerNames, setPlayerNames] = useState<string[]>([]);
   const [hasVoted, setHasVoted] = useState<{ [key: string]: boolean }>({});
@@ -175,6 +181,41 @@ export default function GameScreen() {
     }
   }, [phase, transferOffers]);
 
+  const createRoomMutation = trpc.room.create.useMutation();
+  const joinRoomMutation = trpc.room.join.useMutation();
+
+  const handleCreateRoom = async () => {
+    try {
+      const result = await createRoomMutation.mutateAsync();
+      setCreatedRoomCode(result.roomCode);
+      console.log("Sala creada:", result.roomCode);
+    } catch (error) {
+      console.error("Error al crear sala:", error);
+      alert("Error al crear la sala");
+    }
+  };
+
+  const handleJoinRoom = async () => {
+    if (!roomCode.trim() || !playerName.trim()) {
+      alert("Por favor ingresa el código de sala y tu nombre");
+      return;
+    }
+
+    try {
+      const result = await joinRoomMutation.mutateAsync({
+        roomCode: roomCode.toUpperCase(),
+        playerName,
+      });
+      console.log("Unido a la sala:", result);
+      const count = result.room.players.length;
+      const names = result.room.players.map(p => p.name);
+      initializePlayers(count, names);
+    } catch (error: any) {
+      console.error("Error al unirse a la sala:", error);
+      alert(error.message || "Error al unirse a la sala");
+    }
+  };
+
   const handleSetupComplete = () => {
     const count = parseInt(numPlayersInput);
     if (count >= 2 && count <= 6 && playerNames.length === count) {
@@ -199,7 +240,197 @@ export default function GameScreen() {
     skipFootballer();
   };
 
-  const renderSetupPhase = () => (
+  const renderSetupPhase = () => {
+    if (gameMode === null) {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/xpzuixyvghqwl258485ob" }}
+              style={styles.gameLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.gameTitle}>DRAFT KINGS</Text>
+            <Text style={styles.gameSubtitle}>FOOTBALL AUCTION</Text>
+          </View>
+
+          <View style={styles.setupCard}>
+            <Text style={styles.setupCardTitle}>Selecciona Modo de Juego</Text>
+            
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => setGameMode("ia")}
+            >
+              <Text style={styles.modeButtonIcon}>🤖</Text>
+              <Text style={styles.modeButtonText}>Jugar Contra IA</Text>
+              <Text style={styles.modeButtonSubtext}>Juega solo contra la computadora</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => setGameMode("friends")}
+            >
+              <Text style={styles.modeButtonIcon}>👥</Text>
+              <Text style={styles.modeButtonText}>Jugar Con Amigos</Text>
+              <Text style={styles.modeButtonSubtext}>Crea o únete a una sala online</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (gameMode === "friends" && multiplayerMode === null) {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/xpzuixyvghqwl258485ob" }}
+              style={styles.gameLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.gameTitle}>DRAFT KINGS</Text>
+            <Text style={styles.gameSubtitle}>FOOTBALL AUCTION</Text>
+          </View>
+
+          <View style={styles.setupCard}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => setGameMode(null)}
+            >
+              <Text style={styles.backButtonText}>← Volver</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.setupCardTitle}>Modo Multijugador</Text>
+            
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => {
+                setMultiplayerMode("create");
+                handleCreateRoom();
+              }}
+            >
+              <Text style={styles.modeButtonIcon}>➕</Text>
+              <Text style={styles.modeButtonText}>Crear Sala</Text>
+              <Text style={styles.modeButtonSubtext}>Genera un código para tus amigos</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => setMultiplayerMode("join")}
+            >
+              <Text style={styles.modeButtonIcon}>🔑</Text>
+              <Text style={styles.modeButtonText}>Unirse a Sala</Text>
+              <Text style={styles.modeButtonSubtext}>Ingresa el código de tu amigo</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (gameMode === "friends" && multiplayerMode === "create" && createdRoomCode) {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/xpzuixyvghqwl258485ob" }}
+              style={styles.gameLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.gameTitle}>DRAFT KINGS</Text>
+            <Text style={styles.gameSubtitle}>FOOTBALL AUCTION</Text>
+          </View>
+
+          <View style={styles.setupCard}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => {
+                setMultiplayerMode(null);
+                setCreatedRoomCode("");
+              }}
+            >
+              <Text style={styles.backButtonText}>← Volver</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.setupCardTitle}>¡Sala Creada!</Text>
+            
+            <View style={styles.roomCodeContainer}>
+              <Text style={styles.roomCodeLabel}>CÓDIGO DE SALA</Text>
+              <Text style={styles.roomCodeText}>{createdRoomCode}</Text>
+              <Text style={styles.roomCodeSubtext}>Comparte este código con tus amigos</Text>
+            </View>
+
+            <Text style={styles.waitingText}>Esperando jugadores...</Text>
+            
+            <TouchableOpacity 
+              style={styles.startGameButton}
+              onPress={() => {
+                const count = parseInt(numPlayersInput) || 2;
+                const names = Array(count).fill("").map((_, i) => `Jugador ${i + 1}`);
+                initializePlayers(count, names);
+              }}
+            >
+              <Text style={styles.startGameButtonText}>COMENZAR PARTIDA</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (gameMode === "friends" && multiplayerMode === "join") {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/xpzuixyvghqwl258485ob" }}
+              style={styles.gameLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.gameTitle}>DRAFT KINGS</Text>
+            <Text style={styles.gameSubtitle}>FOOTBALL AUCTION</Text>
+          </View>
+
+          <View style={styles.setupCard}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => setMultiplayerMode(null)}
+            >
+              <Text style={styles.backButtonText}>← Volver</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.setupCardTitle}>Unirse a Sala</Text>
+            
+            <Text style={styles.inputLabel}>Tu Nombre</Text>
+            <TextInput
+              style={styles.playerInput}
+              value={playerName}
+              onChangeText={setPlayerName}
+              placeholder="Ingresa tu nombre"
+              placeholderTextColor="#666"
+            />
+
+            <Text style={styles.inputLabel}>Código de Sala</Text>
+            <TextInput
+              style={styles.playerInput}
+              value={roomCode}
+              onChangeText={setRoomCode}
+              placeholder="Ej: ABC123"
+              placeholderTextColor="#666"
+              autoCapitalize="characters"
+            />
+
+            <TouchableOpacity 
+              style={[styles.startGameButton, (!roomCode || !playerName) && styles.startGameButtonDisabled]}
+              onPress={handleJoinRoom}
+              disabled={!roomCode || !playerName}
+            >
+              <Text style={styles.startGameButtonText}>UNIRSE</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return (
     <View style={styles.setupContainer}>
       <View style={styles.logoContainer}>
         <Image
@@ -212,6 +443,14 @@ export default function GameScreen() {
       </View>
       
       <View style={styles.setupCard}>
+        {gameMode === "ia" && (
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => setGameMode(null)}
+          >
+            <Text style={styles.backButtonText}>← Volver</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.setupCardTitle}>Nueva Partida</Text>
         <Text style={styles.setupCardSubtitle}>Formación 4-3-3</Text>
         
@@ -267,7 +506,8 @@ export default function GameScreen() {
         )}
       </View>
     </View>
-  );
+    );
+  };
 
   const renderWaitingPhase = () => {
     const currentPos = currentPosition;
@@ -2302,5 +2542,75 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold" as const,
     color: "#fff",
+  },
+  modeButton: {
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    alignItems: "center" as const,
+  },
+  modeButtonIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  modeButtonText: {
+    fontSize: 20,
+    fontWeight: "900" as const,
+    color: "#fff",
+    marginBottom: 8,
+    letterSpacing: 1,
+  },
+  modeButtonSubtext: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center" as const,
+  },
+  backButton: {
+    marginBottom: 16,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: COLORS.gold,
+    fontWeight: "600" as const,
+  },
+  roomCodeContainer: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 16,
+    padding: 24,
+    marginVertical: 24,
+    alignItems: "center" as const,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+  },
+  roomCodeLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: "#888",
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+  roomCodeText: {
+    fontSize: 48,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    letterSpacing: 8,
+    marginBottom: 12,
+  },
+  roomCodeSubtext: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center" as const,
+  },
+  waitingText: {
+    fontSize: 16,
+    color: "#888",
+    textAlign: "center" as const,
+    marginBottom: 24,
+  },
+  startGameButtonDisabled: {
+    opacity: 0.5,
   },
 });
