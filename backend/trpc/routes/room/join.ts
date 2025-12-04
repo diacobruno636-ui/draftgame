@@ -2,6 +2,14 @@ import { publicProcedure } from "../../create-context";
 import { z } from "zod";
 import { prisma } from "../../../lib/prisma";
 
+type Player = {
+  id: string;
+  name: string;
+  budget: number;
+  totalSpent: number;
+  isActive: boolean;
+};
+
 export default publicProcedure
   .input(z.object({
     roomCode: z.string(),
@@ -46,7 +54,7 @@ export default publicProcedure
       room: {
         id: updatedRoom!.id,
         code: updatedRoom!.code,
-        players: updatedRoom!.players.map(p => ({
+        players: updatedRoom!.players.map((p: Player) => ({
           id: p.id,
           name: p.name,
           budget: p.budget,

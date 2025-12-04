@@ -214,7 +214,7 @@ export default function GameScreen() {
       });
       console.log("Unido a la sala:", result);
       const count = result.room.players.length;
-      const names = result.room.players.map(p => p.name);
+      const names = result.room.players.map((p: any) => p.name);
       initializePlayers(count, names);
     } catch (error: any) {
       console.error("Error al unirse a la sala:", error);
