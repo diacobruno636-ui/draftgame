@@ -1,25 +1,43 @@
 import { withAccelerate } from "@prisma/extension-accelerate";
-import "@/constants/env";
+import { env } from "@/constants/env";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: any;
+  prisma?: ReturnType<typeof createPrismaClient>;
 };
 
 let PrismaClientConstructor: any;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const prismaModule = require("@prisma/client");
-  PrismaClientConstructor = prismaModule.PrismaClient;
-} catch {
-  console.error("Failed to load Prisma Client. Please run: npx prisma generate");
-  PrismaClientConstructor = class MockPrismaClient {};
+  PrismaClientConstructor = require("@prisma/client").PrismaClient;
+} catch (error) {
+  console.error("[Prisma] Failed to load Prisma Client. Did you run `npx prisma generate`?", error);
+  PrismaClientConstructor = class PrismaClientMock {
+    room = {};
+    roomPlayer = {};
+    $extends() {
+      return this;
+    }
+  };
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClientConstructor({
+function createPrismaClient() {
+  const client = new PrismaClientConstructor({
     log: ["error", "warn"],
-  }).$extends(withAccelerate());
+    datasources: {
+      db: {
+        url: env.prismaDatabaseUrl,
+      },
+    },
+  });
+
+  if (env.prismaDatabaseUrl.startsWith("prisma+")) {
+    return client.$extends(withAccelerate());
+  }
+
+  return client;
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

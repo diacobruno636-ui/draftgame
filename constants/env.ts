@@ -3,9 +3,9 @@ type EnvConfig = {
 };
 
 const prismaUrlCandidates = [
-  process.env.PRISMA_DATABASE_URL,
   process.env.DATABASE_URL,
   process.env.POSTGRES_URL,
+  process.env.PRISMA_DATABASE_URL,
 ].filter((value): value is string => Boolean(value));
 
 if (prismaUrlCandidates.length === 0) {
