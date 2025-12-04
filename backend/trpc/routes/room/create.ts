@@ -1,31 +1,44 @@
-import { publicProcedure } from "../../create-context";
-import { rooms, generateRoomCode } from "../../rooms-store";
+import { prisma } from "@/backend/lib/prisma";
 import { TRPCError } from "@trpc/server";
-import { randomBytes } from "crypto";
+import { publicProcedure } from "../../create-context";
+
+const CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+const generateUniqueRoomCode = async (): Promise<string> => {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    let code = "";
+    for (let i = 0; i < 6; i += 1) {
+      const randomIndex = Math.floor(Math.random() * CHARSET.length);
+      code += CHARSET.charAt(randomIndex);
+    }
+
+    const existingRoom = await prisma.room.findUnique({ where: { code } });
+    if (!existingRoom) {
+      return code;
+    }
+  }
+
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: "No se pudo generar un código de sala único",
+  });
+};
 
 export default publicProcedure.mutation(async () => {
   try {
-    console.log("[room.create] Starting room creation");
-    
-    const roomCode = generateRoomCode();
-    const roomId = randomBytes(16).toString("hex");
-    
-    console.log("[room.create] Creating room with code:", roomCode);
-    
-    const room = {
-      id: roomCode,
-      createdAt: Date.now(),
-      players: [],
-      gameState: null,
-      maxPlayers: 6,
-    };
-    
-    rooms.set(roomCode, room);
-    
-    console.log("[room.create] Room created successfully:", roomId);
+    const roomCode = await generateUniqueRoomCode();
+
+    const room = await prisma.room.create({
+      data: {
+        code: roomCode,
+      },
+      select: {
+        code: true,
+      },
+    });
 
     return {
-      roomCode: roomCode,
+      roomCode: room.code,
       message: "Sala creada exitosamente",
     };
   } catch (error: any) {
