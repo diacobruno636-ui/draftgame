@@ -186,12 +186,18 @@ export default function GameScreen() {
 
   const handleCreateRoom = async () => {
     try {
+      console.log("[Room] Creating room...");
       const result = await createRoomMutation.mutateAsync();
+      console.log("[Room] Room created successfully:", result);
       setCreatedRoomCode(result.roomCode);
-      console.log("Sala creada:", result.roomCode);
-    } catch (error) {
-      console.error("Error al crear sala:", error);
-      alert("Error al crear la sala");
+    } catch (error: any) {
+      console.error("[Room] Error creating room:", error);
+      console.error("[Room] Error details:", {
+        message: error?.message,
+        cause: error?.cause,
+        data: error?.data,
+      });
+      alert(`Error al crear sala: ${error?.message || "Error desconocido"}`);
     }
   };
 
