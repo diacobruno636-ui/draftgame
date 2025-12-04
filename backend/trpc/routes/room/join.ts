@@ -1,7 +1,8 @@
 import { publicProcedure } from "../../create-context";
-import { prisma } from "../../../lib/prisma";
+import { rooms } from "../../rooms-store";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { randomBytes } from "crypto";
 
 export default publicProcedure
   .input(z.object({ 
@@ -12,22 +13,12 @@ export default publicProcedure
     try {
       console.log("[room.join] Joining room:", input.roomCode, "Player:", input.playerName);
       
-      const room = await prisma.room.findUnique({
-        where: { code: input.roomCode },
-        include: { players: true },
-      });
+      const room = rooms.get(input.roomCode);
 
       if (!room) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Sala no encontrada",
-        });
-      }
-
-      if (!room.isActive) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "La sala ya no está activa",
         });
       }
 
@@ -38,22 +29,20 @@ export default publicProcedure
         });
       }
 
-      const player = await prisma.roomPlayer.create({
-        data: {
-          name: input.playerName,
-          roomId: room.id,
-          budget: 1000,
-          totalSpent: 0,
-          isActive: true,
-        },
-      });
+      const playerId = randomBytes(16).toString("hex");
+      const player = {
+        id: playerId,
+        name: input.playerName,
+      };
       
-      console.log("[room.join] Player joined successfully:", player.id);
+      room.players.push(player);
+      
+      console.log("[room.join] Player joined successfully:", playerId);
 
       return {
-        roomCode: room.code,
-        playerId: player.id,
-        playerName: player.name,
+        roomCode: input.roomCode,
+        playerId: playerId,
+        playerName: input.playerName,
         message: "Te has unido a la sala exitosamente",
       };
     } catch (error: any) {

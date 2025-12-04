@@ -1,31 +1,34 @@
 import { publicProcedure } from "../../create-context";
-import { prisma } from "../../../lib/prisma";
+import { rooms } from "../../rooms-store";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 export default publicProcedure
   .input(z.object({ 
+    roomCode: z.string(),
     playerId: z.string(),
     budget: z.number().optional(),
     totalSpent: z.number().optional(),
     squad: z.array(z.any()).optional(),
   }))
   .mutation(async ({ input }) => {
-    const player = await prisma.roomPlayer.findUnique({
-      where: { id: input.playerId },
-    });
+    const room = rooms.get(input.roomCode);
 
-    if (!player) {
-      throw new Error("Jugador no encontrado");
+    if (!room) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Sala no encontrada",
+      });
     }
 
-    await prisma.roomPlayer.update({
-      where: { id: input.playerId },
-      data: {
-        ...(input.budget !== undefined && { budget: input.budget }),
-        ...(input.totalSpent !== undefined && { totalSpent: input.totalSpent }),
-        ...(input.squad !== undefined && { squadData: JSON.stringify(input.squad) }),
-      },
-    });
+    const player = room.players.find((p) => p.id === input.playerId);
+
+    if (!player) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Jugador no encontrado",
+      });
+    }
 
     return {
       success: true,

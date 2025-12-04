@@ -1,5 +1,5 @@
 import { publicProcedure } from "../../create-context";
-import { prisma } from "../../../lib/prisma";
+import { rooms } from "../../rooms-store";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -9,14 +9,7 @@ export default publicProcedure
   }))
   .query(async ({ input }) => {
     try {
-      const room = await prisma.room.findUnique({
-        where: { code: input.roomCode },
-        include: { 
-          players: {
-            orderBy: { joinedAt: 'asc' }
-          }
-        },
-      });
+      const room = rooms.get(input.roomCode);
 
       if (!room) {
         throw new TRPCError({
@@ -27,18 +20,18 @@ export default publicProcedure
 
       return {
         room: {
-          code: room.code,
-          gameState: room.gameState ? JSON.parse(room.gameState) : null,
-          isActive: room.isActive,
+          code: input.roomCode,
+          gameState: room.gameState,
+          isActive: true,
           maxPlayers: room.maxPlayers,
         },
-        players: room.players.map((p: any) => ({
+        players: room.players.map((p) => ({
           id: p.id,
           name: p.name,
-          budget: p.budget,
-          totalSpent: p.totalSpent,
-          isActive: p.isActive,
-          squad: p.squadData ? JSON.parse(p.squadData) : [],
+          budget: 1000,
+          totalSpent: 0,
+          isActive: true,
+          squad: [],
         })),
       };
     } catch (error: any) {
