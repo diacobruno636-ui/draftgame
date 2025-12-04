@@ -1,13 +1,20 @@
 import { publicProcedure } from "../../create-context";
 import { z } from "zod";
-import { rooms } from "../../rooms-store";
+import { prisma } from "../../../lib/prisma";
 
 export default publicProcedure
   .input(z.object({
     roomCode: z.string(),
   }))
-  .query(({ input }) => {
-    const room = rooms.get(input.roomCode);
+  .query(async ({ input }) => {
+    const room = await prisma.room.findUnique({
+      where: { code: input.roomCode },
+      include: { 
+        players: {
+          include: { squad: true },
+        },
+      },
+    });
 
     if (!room) {
       throw new Error("Sala no encontrada");
@@ -16,8 +23,21 @@ export default publicProcedure
     return {
       room: {
         id: room.id,
-        players: room.players,
-        gameState: room.gameState,
+        code: room.code,
+        players: room.players.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          budget: p.budget,
+          totalSpent: p.totalSpent,
+          isActive: p.isActive,
+          squad: p.squad.map((s: any) => ({
+            id: s.id,
+            footballerId: s.footballerId,
+            footballerData: JSON.parse(s.footballerData),
+            price: s.price,
+          })),
+        })),
+        gameState: room.gameState ? JSON.parse(room.gameState) : null,
         maxPlayers: room.maxPlayers,
       },
     };
