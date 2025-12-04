@@ -227,7 +227,20 @@ export default function GameScreen() {
       refetchRoom();
     } catch (error: any) {
       console.error("[Frontend] Error creating/joining room:", error);
-      const errorMessage = error?.message || error?.data?.message || "Error al crear sala";
+      let errorMessage = "Error al crear sala";
+      
+      if (error?.message) {
+        if (error.message.includes("Prisma Client not generated")) {
+          errorMessage = "El servidor necesita configuración. Por favor contacta al administrador para ejecutar: npx prisma generate && npx prisma db push";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage = "No se pudo conectar al servidor. Verifica tu conexión a internet.";
+        } else if (error.message.includes("JSON")) {
+          errorMessage = "Error del servidor. Por favor contacta al administrador.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       Alert.alert("Error", errorMessage);
     }
   };

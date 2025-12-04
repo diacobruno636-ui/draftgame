@@ -11,13 +11,10 @@ try {
   PrismaClientConstructor = require("@prisma/client").PrismaClient;
 } catch (error) {
   console.error("[Prisma] Failed to load Prisma Client. Did you run `npx prisma generate`?", error);
-  PrismaClientConstructor = class PrismaClientMock {
-    room = {};
-    roomPlayer = {};
-    $extends() {
-      return this;
-    }
-  };
+  console.error("[Prisma] Please run the following commands:");
+  console.error("[Prisma]   1. npx prisma generate");
+  console.error("[Prisma]   2. npx prisma db push");
+  throw new Error("Prisma Client not generated. Please run 'npx prisma generate' and 'npx prisma db push'");
 }
 
 function createPrismaClient() {

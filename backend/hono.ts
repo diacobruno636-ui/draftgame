@@ -3,6 +3,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { cors } from "hono/cors";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
+import { prisma } from "./lib/prisma";
 
 const app = new Hono();
 
@@ -18,6 +19,9 @@ app.use(
   trpcServer({
     router: appRouter,
     createContext,
+    onError: ({ error, path }) => {
+      console.error("[tRPC Error] Path:", path, "Error:", error);
+    },
   })
 );
 
@@ -25,8 +29,23 @@ app.get("/", (c) => {
   return c.json({ status: "ok", message: "API is running" });
 });
 
-app.get("/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/health", async (c) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return c.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      database: "connected"
+    });
+  } catch (error: any) {
+    console.error("[Health Check] Database error:", error);
+    return c.json({ 
+      status: "error", 
+      timestamp: new Date().toISOString(),
+      database: "disconnected",
+      error: error.message
+    }, 500);
+  }
 });
 
 export default app;
