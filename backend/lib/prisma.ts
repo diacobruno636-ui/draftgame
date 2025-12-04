@@ -1,4 +1,5 @@
 import { withAccelerate } from "@prisma/extension-accelerate";
+import "@/constants/env";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: any;
