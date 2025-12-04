@@ -1,16 +1,5 @@
 import { publicProcedure } from "../../create-context";
-
-const rooms = new Map<string, {
-  id: string;
-  createdAt: number;
-  players: { id: string; name: string }[];
-  gameState: any;
-  maxPlayers: number;
-}>();
-
-function generateRoomCode(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
+import { rooms, generateRoomCode } from "../../rooms-store";
 
 export default publicProcedure.mutation(() => {
   const roomCode = generateRoomCode();

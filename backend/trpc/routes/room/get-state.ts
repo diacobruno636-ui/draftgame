@@ -1,13 +1,6 @@
 import { publicProcedure } from "../../create-context";
 import { z } from "zod";
-
-const rooms = new Map<string, {
-  id: string;
-  createdAt: number;
-  players: { id: string; name: string }[];
-  gameState: any;
-  maxPlayers: number;
-}>();
+import { rooms } from "../../rooms-store";
 
 export default publicProcedure
   .input(z.object({
