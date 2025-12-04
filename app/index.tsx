@@ -228,20 +228,30 @@ export default function GameScreen() {
     } catch (error: any) {
       console.error("[Frontend] Error creating/joining room:", error);
       let errorMessage = "Error al crear sala";
+      let errorDetails = "";
       
       if (error?.message) {
-        if (error.message.includes("Prisma Client not generated")) {
-          errorMessage = "El servidor necesita configuración. Por favor contacta al administrador para ejecutar: npx prisma generate && npx prisma db push";
+        if (error.message.includes("No base url found") || error.message.includes("Backend might not be deployed")) {
+          errorMessage = "Backend no disponible";
+          errorDetails = "El servidor backend no está configurado o desplegado. Por favor contacta al administrador del proyecto en Rork para configurar el backend.";
+        } else if (error.message.includes("404") || error.message.includes("Not Found")) {
+          errorMessage = "Endpoint no encontrado";
+          errorDetails = "El servidor backend no está respondiendo correctamente. Esto puede significar que:\n\n1. El backend no está desplegado\n2. La URL del API está mal configurada\n3. Falta configurar EXPO_PUBLIC_RORK_API_BASE_URL\n\nPor favor, contacta al soporte de Rork.";
+        } else if (error.message.includes("Prisma Client not generated")) {
+          errorMessage = "Base de datos no configurada";
+          errorDetails = "El servidor necesita ejecutar: npx prisma generate && npx prisma db push";
         } else if (error.message.includes("Failed to fetch")) {
-          errorMessage = "No se pudo conectar al servidor. Verifica tu conexión a internet.";
-        } else if (error.message.includes("JSON")) {
-          errorMessage = "Error del servidor. Por favor contacta al administrador.";
+          errorMessage = "Error de conexión";
+          errorDetails = "No se pudo conectar al servidor. Verifica tu conexión a internet.";
+        } else if (error.message.includes("JSON") || error.message.includes("Already read")) {
+          errorMessage = "Error del servidor";
+          errorDetails = "El servidor está devolviendo una respuesta inválida. Por favor contacta al administrador.";
         } else {
           errorMessage = error.message;
         }
       }
       
-      Alert.alert("Error", errorMessage);
+      Alert.alert("Error", errorDetails || errorMessage);
     }
   };
 
