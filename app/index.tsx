@@ -211,18 +211,24 @@ export default function GameScreen() {
     }
 
     try {
+      console.log("[Frontend] Creating room...");
       const result = await createRoomMutation.mutateAsync();
+      console.log("[Frontend] Room created:", result.roomCode);
       setRoomCode(result.roomCode);
       setIsHost(true);
       
+      console.log("[Frontend] Joining room as host...");
       const joinResult = await joinRoomMutation.mutateAsync({
         roomCode: result.roomCode,
         playerName: playerName,
       });
+      console.log("[Frontend] Joined successfully:", joinResult.playerId);
       setPlayerId(joinResult.playerId);
       refetchRoom();
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Error al crear sala");
+      console.error("[Frontend] Error creating/joining room:", error);
+      const errorMessage = error?.message || error?.data?.message || "Error al crear sala";
+      Alert.alert("Error", errorMessage);
     }
   };
 

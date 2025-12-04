@@ -8,6 +8,11 @@ const app = new Hono();
 
 app.use("*", cors());
 
+app.onError((err, c) => {
+  console.error("[Hono Error]", err);
+  return c.json({ error: err.message || "Internal Server Error" }, 500);
+});
+
 app.use(
   "/api/trpc/*",
   trpcServer({
@@ -18,6 +23,10 @@ app.use(
 
 app.get("/", (c) => {
   return c.json({ status: "ok", message: "API is running" });
+});
+
+app.get("/health", (c) => {
+  return c.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 export default app;
