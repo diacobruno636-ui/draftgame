@@ -1,18 +1,18 @@
 import { publicProcedure } from "../../create-context";
-import { z } from "zod";
 import { prisma } from "../../../lib/prisma";
+import { z } from "zod";
 
 export default publicProcedure
-  .input(z.object({
-    roomCode: z.string(),
+  .input(z.object({ 
+    roomCode: z.string()
   }))
   .query(async ({ input }) => {
     const room = await prisma.room.findUnique({
       where: { code: input.roomCode },
       include: { 
         players: {
-          include: { squad: true },
-        },
+          orderBy: { joinedAt: 'asc' }
+        }
       },
     });
 
@@ -22,23 +22,18 @@ export default publicProcedure
 
     return {
       room: {
-        id: room.id,
         code: room.code,
-        players: room.players.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          budget: p.budget,
-          totalSpent: p.totalSpent,
-          isActive: p.isActive,
-          squad: p.squad.map((s: any) => ({
-            id: s.id,
-            footballerId: s.footballerId,
-            footballerData: JSON.parse(s.footballerData),
-            price: s.price,
-          })),
-        })),
         gameState: room.gameState ? JSON.parse(room.gameState) : null,
+        isActive: room.isActive,
         maxPlayers: room.maxPlayers,
       },
+      players: room.players.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        budget: p.budget,
+        totalSpent: p.totalSpent,
+        isActive: p.isActive,
+        squad: p.squadData ? JSON.parse(p.squadData) : [],
+      })),
     };
   });

@@ -11,41 +11,28 @@ model Room {
   id          String   @id @default(cuid())
   code        String   @unique
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   maxPlayers  Int      @default(6)
   gameState   String?  @db.Text
   isActive    Boolean  @default(true)
   
-  players     Player[]
+  players     RoomPlayer[]
   
   @@index([code])
   @@index([isActive])
 }
 
-model Player {
+model RoomPlayer {
   id          String   @id @default(cuid())
   name        String
-  budget      Int      @default(20000000)
+  budget      Int      @default(1000)
   totalSpent  Int      @default(0)
   isActive    Boolean  @default(true)
   joinedAt    DateTime @default(now())
+  squadData   String?  @db.Text
   
   roomId      String
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   
-  squad       Squad[]
-  
   @@index([roomId])
-}
-
-model Squad {
-  id              String   @id @default(cuid())
-  footballerId    String
-  footballerData  String   @db.Text
-  acquiredAt      DateTime @default(now())
-  price           Int
-  
-  playerId        String
-  player          Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  
-  @@index([playerId])
 }

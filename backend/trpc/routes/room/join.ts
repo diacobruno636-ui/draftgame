@@ -1,19 +1,11 @@
 import { publicProcedure } from "../../create-context";
-import { z } from "zod";
 import { prisma } from "../../../lib/prisma";
-
-type Player = {
-  id: string;
-  name: string;
-  budget: number;
-  totalSpent: number;
-  isActive: boolean;
-};
+import { z } from "zod";
 
 export default publicProcedure
-  .input(z.object({
-    roomCode: z.string(),
-    playerName: z.string(),
+  .input(z.object({ 
+    roomCode: z.string(), 
+    playerName: z.string() 
   }))
   .mutation(async ({ input }) => {
     const room = await prisma.room.findUnique({
@@ -26,41 +18,27 @@ export default publicProcedure
     }
 
     if (!room.isActive) {
-      throw new Error("Sala no activa");
+      throw new Error("La sala ya no está activa");
     }
 
     if (room.players.length >= room.maxPlayers) {
-      throw new Error("Sala llena");
+      throw new Error("La sala está llena");
     }
 
-    const player = await prisma.player.create({
+    const player = await prisma.roomPlayer.create({
       data: {
         name: input.playerName,
         roomId: room.id,
-        budget: 20000000,
+        budget: 1000,
         totalSpent: 0,
         isActive: true,
       },
     });
 
-    const updatedRoom = await prisma.room.findUnique({
-      where: { id: room.id },
-      include: { players: true },
-    });
-
     return {
-      success: true,
+      roomCode: room.code,
       playerId: player.id,
-      room: {
-        id: updatedRoom!.id,
-        code: updatedRoom!.code,
-        players: updatedRoom!.players.map((p: Player) => ({
-          id: p.id,
-          name: p.name,
-          budget: p.budget,
-          totalSpent: p.totalSpent,
-          isActive: p.isActive,
-        })),
-      },
+      playerName: player.name,
+      message: "Te has unido a la sala exitosamente",
     };
   });

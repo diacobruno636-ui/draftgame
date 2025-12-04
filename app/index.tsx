@@ -9,12 +9,16 @@ import {
   Image,
   Dimensions,
   Animated,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useGame, getRarity } from "@/contexts/GameContext";
 import { Footballer } from "@/mocks/footballers";
-import { ChevronUp, Plus, Minus, ChevronDown, Flame } from "lucide-react-native";
+import { ChevronUp, Plus, Minus, ChevronDown, Flame, Copy } from "lucide-react-native";
 import { COLORS } from "@/constants/colors";
+import { trpc } from "@/lib/trpc";
+import * as Clipboard from "expo-clipboard";
 
 
 const { width } = Dimensions.get("window");
@@ -46,6 +50,12 @@ export default function GameScreen() {
   } = useGame();
 
 
+  const [gameMode, setGameMode] = useState<"menu" | "local" | "online">("menu");
+  const [onlineMode, setOnlineMode] = useState<"create" | "join" | "">(""  );
+  const [roomCode, setRoomCode] = useState<string>("");
+  const [playerName, setPlayerName] = useState<string>("");
+  const [playerId, setPlayerId] = useState<string>("");
+  const [isHost, setIsHost] = useState(false);
   const [numPlayersInput, setNumPlayersInput] = useState("");
   const [playerNames, setPlayerNames] = useState<string[]>([]);
   const [hasVoted, setHasVoted] = useState<{ [key: string]: boolean }>({});
@@ -179,6 +189,76 @@ export default function GameScreen() {
 
 
 
+  const createRoomMutation = trpc.room.create.useMutation();
+  const joinRoomMutation = trpc.room.join.useMutation();
+  const { data: roomData, refetch: refetchRoom } = trpc.room.getState.useQuery(
+    { roomCode: roomCode },
+    { enabled: !!roomCode && gameMode === "online", refetchInterval: 2000 }
+  );
+
+  useEffect(() => {  
+    if (roomData && gameMode === "online") {
+      if (roomData.room.gameState) {
+        console.log("Syncing game state from server");
+      }
+    }
+  }, [roomData, gameMode]);
+
+  const handleCreateRoom = async () => {
+    if (!playerName.trim()) {
+      Alert.alert("Error", "Por favor ingresa tu nombre");
+      return;
+    }
+
+    try {
+      const result = await createRoomMutation.mutateAsync();
+      setRoomCode(result.roomCode);
+      setIsHost(true);
+      
+      const joinResult = await joinRoomMutation.mutateAsync({
+        roomCode: result.roomCode,
+        playerName: playerName,
+      });
+      setPlayerId(joinResult.playerId);
+      refetchRoom();
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Error al crear sala");
+    }
+  };
+
+  const handleJoinRoom = async () => {
+    if (!playerName.trim() || !roomCode.trim()) {
+      Alert.alert("Error", "Por favor ingresa tu nombre y el código de sala");
+      return;
+    }
+
+    try {
+      const result = await joinRoomMutation.mutateAsync({
+        roomCode: roomCode.toUpperCase(),
+        playerName: playerName,
+      });
+      setPlayerId(result.playerId);
+      setRoomCode(result.roomCode);
+      refetchRoom();
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Error al unirse a la sala");
+    }
+  };
+
+  const handleCopyRoomCode = async () => {
+    await Clipboard.setStringAsync(roomCode);
+    Alert.alert("Copiado", "Código copiado al portapapeles");
+  };
+
+  const handleStartOnlineGame = () => {
+    if (roomData && roomData.players.length >= 2) {
+      const names = roomData.players.map((p: any) => p.name);
+      initializePlayers(roomData.players.length, names);
+    } else {
+      Alert.alert("Error", "Se necesitan al menos 2 jugadores para comenzar");
+    }
+  };
+
   const handleSetupComplete = () => {
     const count = parseInt(numPlayersInput);
     if (count >= 2 && count <= 6 && playerNames.length === count) {
@@ -203,6 +283,239 @@ export default function GameScreen() {
     skipFootballer();
   };
 
+  const renderMenuPhase = () => {
+    return (
+      <View style={styles.setupContainer}>
+        <View style={styles.logoContainer}>
+          <Image
+            source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/xpzuixyvghqwl258485ob" }}
+            style={styles.gameLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.gameTitle}>DRAFT KINGS</Text>
+          <Text style={styles.gameSubtitle}>FOOTBALL AUCTION</Text>
+        </View>
+        
+        <View style={styles.setupCard}>
+          <Text style={styles.setupCardTitle}>Selecciona Modo de Juego</Text>
+          
+          <TouchableOpacity 
+            style={styles.modeButton}
+            onPress={() => setGameMode("local")}
+          >
+            <Text style={styles.modeButtonText}>🏠 Jugar Local</Text>
+            <Text style={styles.modeButtonSubtext}>Varios jugadores en el mismo dispositivo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.modeButton}
+            onPress={() => { setGameMode("online"); setOnlineMode(""); }}
+          >
+            <Text style={styles.modeButtonText}>🌐 Jugar Online</Text>
+            <Text style={styles.modeButtonSubtext}>Con amigos en diferentes dispositivos</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderOnlineSetup = () => {
+    if (onlineMode === "") {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/xpzuixyvghqwl258485ob" }}
+              style={styles.gameLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.gameTitle}>MODO ONLINE</Text>
+          </View>
+          
+          <View style={styles.setupCard}>
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => setOnlineMode("create")}
+            >
+              <Text style={styles.modeButtonText}>Crear Sala</Text>
+              <Text style={styles.modeButtonSubtext}>Crea una sala y comparte el código</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => setOnlineMode("join")}
+            >
+              <Text style={styles.modeButtonText}>Unirse a Sala</Text>
+              <Text style={styles.modeButtonSubtext}>Ingresa el código de una sala</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.startGameButton, { backgroundColor: "#666" }]}
+              onPress={() => setGameMode("menu")}
+            >
+              <Text style={styles.startGameButtonText}>VOLVER</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (onlineMode === "create" && !roomCode) {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.gameTitle}>CREAR SALA</Text>
+          </View>
+          
+          <View style={styles.setupCard}>
+            <Text style={styles.setupCardSubtitle}>Ingresa tu nombre</Text>
+            <TextInput
+              style={styles.playerInput}
+              value={playerName}
+              onChangeText={setPlayerName}
+              placeholder="Tu nombre"
+              placeholderTextColor="#666"
+            />
+
+            {createRoomMutation.isPending ? (
+              <ActivityIndicator size="large" color={COLORS.gold} style={{ marginTop: 20 }} />
+            ) : (
+              <TouchableOpacity 
+                style={styles.startGameButton}
+                onPress={handleCreateRoom}
+              >
+                <Text style={styles.startGameButtonText}>CREAR SALA</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity 
+              style={[styles.startGameButton, { backgroundColor: "#666", marginTop: 10 }]}
+              onPress={() => { setOnlineMode(""); setPlayerName(""); }}
+            >
+              <Text style={styles.startGameButtonText}>VOLVER</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (onlineMode === "join" && !playerId) {
+      return (
+        <View style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.gameTitle}>UNIRSE A SALA</Text>
+          </View>
+          
+          <View style={styles.setupCard}>
+            <Text style={styles.setupCardSubtitle}>Ingresa el código de sala</Text>
+            <TextInput
+              style={styles.playerInput}
+              value={roomCode}
+              onChangeText={(text) => setRoomCode(text.toUpperCase())}
+              placeholder="Código de sala"
+              placeholderTextColor="#666"
+              autoCapitalize="characters"
+            />
+
+            <Text style={[styles.setupCardSubtitle, { marginTop: 20 }]}>Ingresa tu nombre</Text>
+            <TextInput
+              style={styles.playerInput}
+              value={playerName}
+              onChangeText={setPlayerName}
+              placeholder="Tu nombre"
+              placeholderTextColor="#666"
+            />
+
+            {joinRoomMutation.isPending ? (
+              <ActivityIndicator size="large" color={COLORS.gold} style={{ marginTop: 20 }} />
+            ) : (
+              <TouchableOpacity 
+                style={styles.startGameButton}
+                onPress={handleJoinRoom}
+              >
+                <Text style={styles.startGameButtonText}>UNIRSE</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity 
+              style={[styles.startGameButton, { backgroundColor: "#666", marginTop: 10 }]}
+              onPress={() => { setOnlineMode(""); setRoomCode(""); setPlayerName(""); }}
+            >
+              <Text style={styles.startGameButtonText}>VOLVER</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (roomCode && roomData) {
+      return (
+        <ScrollView style={styles.setupContainer}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.gameTitle}>SALA ONLINE</Text>
+            
+            <View style={styles.roomCodeContainer}>
+              <Text style={styles.roomCodeLabel}>Código de Sala:</Text>
+              <View style={styles.roomCodeBox}>
+                <Text style={styles.roomCodeText}>{roomCode}</Text>
+                <TouchableOpacity onPress={handleCopyRoomCode}>
+                  <Copy size={24} color={COLORS.gold} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.setupCard}>
+            <Text style={styles.setupCardTitle}>Jugadores en la Sala</Text>
+            <Text style={styles.setupCardSubtitle}>
+              {roomData.players.length}/{roomData.room.maxPlayers} jugadores
+            </Text>
+            
+            {roomData.players.map((player: any, index: number) => (
+              <View key={player.id} style={styles.onlinePlayerCard}>
+                <Text style={styles.onlinePlayerName}>
+                  {index + 1}. {player.name} {player.id === playerId && "(Tú)"}
+                  {index === 0 && " 👑"}
+                </Text>
+              </View>
+            ))}
+
+            {isHost && roomData.players.length >= 2 && (
+              <TouchableOpacity 
+                style={[styles.startGameButton, { marginTop: 20 }]}
+                onPress={handleStartOnlineGame}
+              >
+                <Text style={styles.startGameButtonText}>COMENZAR JUEGO</Text>
+              </TouchableOpacity>
+            )}
+
+            {!isHost && (
+              <Text style={styles.waitingText}>
+                Esperando a que el host inicie el juego...
+              </Text>
+            )}
+
+            <TouchableOpacity 
+              style={[styles.startGameButton, { backgroundColor: "#F44336", marginTop: 10 }]}
+              onPress={() => {
+                setGameMode("menu");
+                setOnlineMode("");
+                setRoomCode("");
+                setPlayerName("");
+                setPlayerId("");
+                setIsHost(false);
+              }}
+            >
+              <Text style={styles.startGameButtonText}>SALIR DE LA SALA</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      );
+    }
+
+    return null;
+  };
+
   const renderSetupPhase = () => {
     return (
     <View style={styles.setupContainer}>
@@ -218,7 +531,7 @@ export default function GameScreen() {
       
       <View style={styles.setupCard}>
 
-        <Text style={styles.setupCardTitle}>Nueva Partida</Text>
+        <Text style={styles.setupCardTitle}>Nueva Partida Local</Text>
         <Text style={styles.setupCardSubtitle}>Formación 4-3-3</Text>
         
         <View style={styles.playerCountSection}>
@@ -271,6 +584,13 @@ export default function GameScreen() {
             <Text style={styles.startGameButtonText}>COMENZAR</Text>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity 
+          style={[styles.startGameButton, { backgroundColor: "#666", marginTop: 10 }]}
+          onPress={() => setGameMode("menu")}
+        >
+          <Text style={styles.startGameButtonText}>VOLVER</Text>
+        </TouchableOpacity>
       </View>
     </View>
     );
@@ -1037,7 +1357,9 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {phase === "setup" && renderSetupPhase()}
+      {gameMode === "menu" && renderMenuPhase()}
+      {gameMode === "online" && renderOnlineSetup()}
+      {gameMode === "local" && phase === "setup" && renderSetupPhase()}
       {phase === "waiting" && renderWaitingPhase()}
       {phase === "active" && renderActivePhase()}
       {phase === "revealed" && renderRevealedPhase()}
@@ -2028,6 +2350,68 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
+  },
+  modeButton: {
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+  } as const,
+  modeButtonText: {
+    fontSize: 20,
+    fontWeight: "900" as const,
+    color: "#fff",
+    marginBottom: 8,
+  },
+  modeButtonSubtext: {
+    fontSize: 14,
+    color: "#888",
+  },
+  roomCodeContainer: {
+    marginTop: 24,
+    alignItems: "center" as const,
+  },
+  roomCodeLabel: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 8,
+  },
+  roomCodeBox: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    gap: 12,
+  },
+  roomCodeText: {
+    fontSize: 32,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    letterSpacing: 4,
+  },
+  onlinePlayerCard: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: COLORS.darkBorder,
+  },
+  onlinePlayerName: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  waitingText: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center" as const,
+    marginTop: 20,
   },
   primeText: {
     color: COLORS.gold,
