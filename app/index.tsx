@@ -193,7 +193,13 @@ export default function GameScreen() {
   const joinRoomMutation = trpc.room.join.useMutation();
   const { data: roomData, refetch: refetchRoom } = trpc.room.getState.useQuery(
     { roomCode: roomCode },
-    { enabled: !!roomCode && gameMode === "online", refetchInterval: 2000 }
+    { 
+      enabled: !!roomCode && gameMode === "online",
+      refetchInterval: 3000,
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 2000,
+    }
   );
 
   useEffect(() => {  
