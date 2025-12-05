@@ -220,7 +220,7 @@ export const footballers: Footballer[] = [
     league: "La Liga",
     age: 20,
     height: 186,
-    rating: 90,
+    rating: 89,
     imageUrl: "https://cdn.sofifa.net/players/252/371/25_120.png"
   },
   {
@@ -308,7 +308,7 @@ export const footballers: Footballer[] = [
     league: "Premier League",
     age: 23,
     height: 195,
-    rating: 91,
+    rating: 90,
     imageUrl: "https://cdn.sofifa.net/players/239/085/25_120.png"
   },
   {
@@ -319,7 +319,7 @@ export const footballers: Footballer[] = [
     league: "La Liga",
     age: 25,
     height: 178,
-    rating: 91,
+    rating: 92,
     imageUrl: "https://cdn.sofifa.net/players/231/747/25_120.png"
   },
   {
@@ -698,13 +698,13 @@ export const footballers: Footballer[] = [
   },
   {
     id: "63",
-    name: "Julian Alvarez",
+    name: "Julián Álvarez",
     position: "Forward",
     nationality: "Argentina",
     league: "Premier League",
     age: 24,
     height: 170,
-    rating: 83,
+    rating: 85,
     imageUrl: "https://cdn.sofifa.net/players/237/692/25_120.png"
   },
   {
@@ -2790,7 +2790,7 @@ export const footballers: Footballer[] = [
     league: "Ligue 1",
     age: 18,
     height: 176,
-    rating: 80,
+    rating: 88,
     imageUrl: "https://cdn.sofifa.net/players/268/260/25_120.png",
     isFutties: true
   },
@@ -2949,5 +2949,151 @@ export const footballers: Footballer[] = [
     rating: 76,
     imageUrl: "https://cdn.sofifa.net/players/268/260/25_120.png",
     isFutties: true
+  },
+  {
+    id: "futties-21",
+    name: "Lamine Yamal",
+    position: "Forward",
+    nationality: "Spain",
+    league: "La Liga",
+    age: 17,
+    height: 178,
+    rating: 89,
+    imageUrl: "https://cdn.sofifa.net/players/268/260/25_120.png",
+    isFutties: true
+  },
+  {
+    id: "futties-22",
+    name: "Pau Cubarsí",
+    position: "Defender",
+    nationality: "Spain",
+    league: "La Liga",
+    age: 17,
+    height: 184,
+    rating: 85,
+    imageUrl: "https://cdn.sofifa.net/players/268/260/25_120.png",
+    isFutties: true
+  },
+  {
+    id: "futties-23",
+    name: "Alejandro Garnacho",
+    position: "Forward",
+    nationality: "Argentina",
+    league: "Premier League",
+    age: 20,
+    height: 180,
+    rating: 85,
+    imageUrl: "https://cdn.sofifa.net/players/268/260/25_120.png",
+    isFutties: true
+  },
+  {
+    id: "221",
+    name: "Robert Lewandowski",
+    position: "Forward",
+    nationality: "Poland",
+    league: "La Liga",
+    age: 35,
+    height: 185,
+    rating: 90,
+    imageUrl: "https://cdn.sofifa.net/players/188/817/25_120.png"
+  },
+  {
+    id: "222",
+    name: "Gianluigi Donnarumma",
+    position: "Goalkeeper",
+    nationality: "Italy",
+    league: "Ligue 1",
+    age: 25,
+    height: 196,
+    rating: 87,
+    imageUrl: "https://cdn.sofifa.net/players/230/621/25_120.png"
+  },
+  {
+    id: "223",
+    name: "Joshua Kimmich",
+    position: "Midfielder",
+    nationality: "Germany",
+    league: "Bundesliga",
+    age: 29,
+    height: 177,
+    rating: 88,
+    imageUrl: "https://cdn.sofifa.net/players/212/622/25_120.png"
+  },
+  {
+    id: "224",
+    name: "João Palhinha",
+    position: "Midfielder",
+    nationality: "Portugal",
+    league: "Bundesliga",
+    age: 29,
+    height: 190,
+    rating: 85,
+    imageUrl: "https://cdn.sofifa.net/players/224/334/25_120.png"
+  },
+  {
+    id: "225",
+    name: "Karim Benzema",
+    position: "Forward",
+    nationality: "France",
+    league: "Saudi Pro League",
+    age: 36,
+    height: 185,
+    rating: 88,
+    imageUrl: "https://cdn.sofifa.net/players/165/153/25_120.png"
+  },
+  {
+    id: "226",
+    name: "Heung-Min Son",
+    position: "Forward",
+    nationality: "South Korea",
+    league: "Premier League",
+    age: 32,
+    height: 183,
+    rating: 88,
+    imageUrl: "https://cdn.sofifa.net/players/200/104/25_120.png"
+  },
+  {
+    id: "227",
+    name: "Bernardo Silva",
+    position: "Midfielder",
+    nationality: "Portugal",
+    league: "Premier League",
+    age: 29,
+    height: 173,
+    rating: 88,
+    imageUrl: "https://cdn.sofifa.net/players/218/667/25_120.png"
+  },
+  {
+    id: "228",
+    name: "Pedri",
+    position: "Midfielder",
+    nationality: "Spain",
+    league: "La Liga",
+    age: 21,
+    height: 174,
+    rating: 85,
+    imageUrl: "https://cdn.sofifa.net/players/251/854/25_120.png"
+  },
+  {
+    id: "229",
+    name: "Gavi",
+    position: "Midfielder",
+    nationality: "Spain",
+    league: "La Liga",
+    age: 19,
+    height: 173,
+    rating: 84,
+    imageUrl: "https://cdn.sofifa.net/players/264/240/25_120.png"
+  },
+  {
+    id: "230",
+    name: "Rúben Neves",
+    position: "Midfielder",
+    nationality: "Portugal",
+    league: "Saudi Pro League",
+    age: 27,
+    height: 180,
+    rating: 84,
+    imageUrl: "https://cdn.sofifa.net/players/224/232/25_120.png"
   },
 ];

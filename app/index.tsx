@@ -1037,7 +1037,7 @@ export default function GameScreen() {
           <ChevronDown size={20} color="#4CAF50" />
         </TouchableOpacity>
         {showToPlayerPicker && (
-          <View style={styles.pickerDropdown}>
+          <ScrollView style={styles.pickerDropdown} nestedScrollEnabled>
             {players.filter(p => p.name !== transferFrom).map((player) => (
               <TouchableOpacity
                 key={player.id}
@@ -1051,7 +1051,7 @@ export default function GameScreen() {
                 <Text style={styles.pickerItemText}>{player.name}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         )}
 
         {transferFrom && (
@@ -1069,7 +1069,7 @@ export default function GameScreen() {
               <ChevronDown size={20} color="#4CAF50" />
             </TouchableOpacity>
             {showOfferedPlayerPicker && (
-              <View style={styles.pickerDropdown}>
+              <ScrollView style={styles.pickerDropdown} nestedScrollEnabled>
                 {players.find(p => p.name === transferFrom)?.squad.map((footballer) => (
                   <TouchableOpacity
                     key={footballer.id}
@@ -1082,7 +1082,7 @@ export default function GameScreen() {
                     <Text style={styles.pickerItemText}>{footballer.name} (⭐ {footballer.rating})</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             )}
           </>
         )}
@@ -1102,7 +1102,7 @@ export default function GameScreen() {
               <ChevronDown size={20} color="#4CAF50" />
             </TouchableOpacity>
             {showRequestedPlayerPicker && (
-              <View style={styles.pickerDropdown}>
+              <ScrollView style={styles.pickerDropdown} nestedScrollEnabled>
                 {players.find(p => p.name === transferTo)?.squad.map((footballer) => (
                   <TouchableOpacity
                     key={footballer.id}
@@ -1115,7 +1115,7 @@ export default function GameScreen() {
                     <Text style={styles.pickerItemText}>{footballer.name} (⭐ {footballer.rating})</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             )}
           </>
         )}

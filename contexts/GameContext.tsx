@@ -117,7 +117,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
     const roll = Math.random() * 100;
     
     let selected: Footballer;
-    if (roll < 8 && primes.length > 0) {
+    if (roll < 15 && primes.length > 0) {
       const randomIndex = Math.floor(Math.random() * primes.length);
       selected = primes[randomIndex];
     } else if (roll < 25 && legends.length > 0) {
