@@ -70,6 +70,11 @@ export default function GameScreen() {
   const [showOfferedPlayerPicker, setShowOfferedPlayerPicker] = useState(false);
   const [showRequestedPlayerPicker, setShowRequestedPlayerPicker] = useState(false);
   const [, forceUpdate] = useState(0);
+  const [isAuctionMode, setIsAuctionMode] = useState(false);
+  const [selectedAuctionPlayer, setSelectedAuctionPlayer] = useState<string>("");
+  const [selectedAuctionFootballer, setSelectedAuctionFootballer] = useState<string>("");
+  const [auctionTimeRemaining, setAuctionTimeRemaining] = useState(10);
+  const [activeAuction, setActiveAuction] = useState<{playerId: string, footballerId: string, bids: {playerId: string, playerName: string, amount: number}[]} | null>(null);
 
   const sparkleAnim1 = useState(new Animated.Value(0))[0];
   const sparkleAnim2 = useState(new Animated.Value(0))[0];
@@ -186,6 +191,45 @@ export default function GameScreen() {
       return () => clearInterval(interval);
     }
   }, [phase, transferOffers]);
+
+  useEffect(() => {
+    if (activeAuction && auctionTimeRemaining > 0) {
+      const timer = setTimeout(() => {
+        setAuctionTimeRemaining(t => t - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (activeAuction && auctionTimeRemaining === 0) {
+      if (activeAuction.bids.length > 0) {
+        const highestBid = activeAuction.bids.reduce((max, bid) => bid.amount > max.amount ? bid : max, activeAuction.bids[0]);
+        const seller = players.find(p => p.id === activeAuction.playerId);
+        const footballer = seller?.squad.find(f => f.id === activeAuction.footballerId);
+        
+        if (seller && footballer) {
+          setPlayers(prevPlayers => prevPlayers.map(p => {
+            if (p.id === activeAuction.playerId) {
+              return {
+                ...p,
+                budget: p.budget + highestBid.amount,
+                squad: p.squad.filter(f => f.id !== activeAuction.footballerId),
+                totalSpent: p.totalSpent - highestBid.amount
+              };
+            }
+            if (p.id === highestBid.playerId) {
+              return {
+                ...p,
+                budget: p.budget - highestBid.amount,
+                squad: [...p.squad, footballer],
+                totalSpent: p.totalSpent + highestBid.amount
+              };
+            }
+            return p;
+          }));
+        }
+      }
+      setActiveAuction(null);
+      setAuctionTimeRemaining(10);
+    }
+  }, [activeAuction, auctionTimeRemaining, players]);
 
 
 
