@@ -512,6 +512,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
   return {
     phase,
     players,
+    setPlayers,
     squadRequirements: SQUAD_FORMATION,
     targetFootballer,
     basePrice,

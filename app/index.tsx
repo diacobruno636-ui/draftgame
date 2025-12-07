@@ -27,6 +27,7 @@ export default function GameScreen() {
   const {
     phase,
     players,
+    setPlayers,
     targetFootballer,
     basePrice,
     currentBid,
@@ -70,11 +71,13 @@ export default function GameScreen() {
   const [showOfferedPlayerPicker, setShowOfferedPlayerPicker] = useState(false);
   const [showRequestedPlayerPicker, setShowRequestedPlayerPicker] = useState(false);
   const [, forceUpdate] = useState(0);
-  const [isAuctionMode, setIsAuctionMode] = useState(false);
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
   const [selectedAuctionPlayer, setSelectedAuctionPlayer] = useState<string>("");
   const [selectedAuctionFootballer, setSelectedAuctionFootballer] = useState<string>("");
+  const [showAuctionPlayerPicker, setShowAuctionPlayerPicker] = useState(false);
+  const [showAuctionFootballerPicker, setShowAuctionFootballerPicker] = useState(false);
   const [auctionTimeRemaining, setAuctionTimeRemaining] = useState(10);
-  const [activeAuction, setActiveAuction] = useState<{playerId: string, footballerId: string, bids: {playerId: string, playerName: string, amount: number}[]} | null>(null);
+  const [activeAuction, setActiveAuction] = useState<{playerId: string, playerName: string, footballerId: string, footballerName: string, bids: {playerId: string, playerName: string, amount: number}[]} | null>(null);
 
   const sparkleAnim1 = useState(new Animated.Value(0))[0];
   const sparkleAnim2 = useState(new Animated.Value(0))[0];
@@ -224,7 +227,13 @@ export default function GameScreen() {
             }
             return p;
           }));
+          Alert.alert(
+            "Subasta Finalizada",
+            `${highestBid.playerName} ganó ${footballer.name} por ${highestBid.amount}M`
+          );
         }
+      } else {
+        Alert.alert("Subasta Finalizada", "No hubo ofertas");
       }
       setActiveAuction(null);
       setAuctionTimeRemaining(10);
@@ -345,7 +354,7 @@ export default function GameScreen() {
     }
   };
 
-  const handleStartAuction = () => {
+  const handleStartAuctionButton = () => {
     startAuction();
   };
 
@@ -811,7 +820,7 @@ export default function GameScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.modernStartButton} onPress={handleStartAuction}>
+        <TouchableOpacity style={styles.modernStartButton} onPress={handleStartAuctionButton}>
           <Text style={styles.modernStartButtonText}>INICIAR SUBASTA</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -1036,6 +1045,80 @@ export default function GameScreen() {
     );
   };
 
+  const handleStartAuction = () => {
+    if (!selectedAuctionPlayer || !selectedAuctionFootballer) {
+      Alert.alert("Error", "Selecciona un jugador y un futbolista");
+      return;
+    }
+    
+    const player = players.find(p => p.id === selectedAuctionPlayer);
+    const footballer = player?.squad.find(f => f.id === selectedAuctionFootballer);
+    
+    if (!player || !footballer) {
+      Alert.alert("Error", "Jugador o futbolista no encontrado");
+      return;
+    }
+    
+    setActiveAuction({
+      playerId: player.id,
+      playerName: player.name,
+      footballerId: footballer.id,
+      footballerName: footballer.name,
+      bids: []
+    });
+    setAuctionTimeRemaining(10);
+    setShowAuctionModal(false);
+    setSelectedAuctionPlayer("");
+    setSelectedAuctionFootballer("");
+  };
+  
+  const handlePlaceBid = (playerId: string) => {
+    if (!activeAuction) return;
+    
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+    
+    if (player.id === activeAuction.playerId) {
+      Alert.alert("Error", "No puedes ofertar por tu propio jugador");
+      return;
+    }
+    
+    const currentHighestBid = activeAuction.bids.length > 0 
+      ? Math.max(...activeAuction.bids.map(b => b.amount))
+      : 5;
+    
+    const newBidAmount = currentHighestBid + 5;
+    
+    if (newBidAmount > player.budget) {
+      Alert.alert("Error", "No tienes suficiente presupuesto");
+      return;
+    }
+    
+    const existingBidIndex = activeAuction.bids.findIndex(b => b.playerId === playerId);
+    
+    setActiveAuction(prev => {
+      if (!prev) return null;
+      
+      const newBids = [...prev.bids];
+      
+      if (existingBidIndex !== -1) {
+        newBids[existingBidIndex] = {
+          playerId,
+          playerName: player.name,
+          amount: newBidAmount
+        };
+      } else {
+        newBids.push({
+          playerId,
+          playerName: player.name,
+          amount: newBidAmount
+        });
+      }
+      
+      return { ...prev, bids: newBids };
+    });
+  };
+
   const renderTransferPhase = () => {
     const activeOffers = transferOffers.filter((o) => o.status === "pending");
     
@@ -1229,7 +1312,10 @@ export default function GameScreen() {
                 {offer.offerAmount > 0 && ` + ${offer.offerAmount}M`} por {requestedFootballer?.name || "Jugador desconocido"} de {toPlayer?.name}
               </Text>
               <Text style={styles.offerPlayerNames}>
-                Comprador: {fromPlayer?.name} | Vendedor: {toPlayer?.name}
+                El que quiere comprar: {fromPlayer?.name}
+              </Text>
+              <Text style={styles.offerPlayerNames}>
+                El que vende (gana dinero): {toPlayer?.name}
               </Text>
               <View style={styles.offerActions}>
                 <TouchableOpacity
@@ -1252,6 +1338,13 @@ export default function GameScreen() {
           <Text style={styles.noOffersText}>No hay ofertas activas</Text>
         )}
       </View>
+
+      <TouchableOpacity 
+        style={[styles.auctionButton, { marginBottom: 20 }]}
+        onPress={() => setShowAuctionModal(true)}
+      >
+        <Text style={styles.auctionButtonText}>🔨 Iniciar Subasta</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.continueButton} onPress={proceedFromTransfer}>
         <Text style={styles.continueButtonText}>Continuar al Siguiente Round</Text>
@@ -1444,6 +1537,184 @@ export default function GameScreen() {
       {phase === "revealed" && renderRevealedPhase()}
       {phase === "transfer" && renderTransferPhase()}
       {phase === "voting" && renderVotingPhase()}
+      
+      {showAuctionModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.auctionModalContent}>
+            <Text style={styles.auctionModalTitle}>Crear Subasta</Text>
+            
+            <Text style={styles.auctionModalLabel}>Selecciona Usuario:</Text>
+            <TouchableOpacity
+              style={styles.auctionPickerButton}
+              onPress={() => setShowAuctionPlayerPicker(!showAuctionPlayerPicker)}
+            >
+              <Text style={styles.auctionPickerButtonText}>
+                {selectedAuctionPlayer 
+                  ? players.find(p => p.id === selectedAuctionPlayer)?.name 
+                  : "Seleccionar usuario"}
+              </Text>
+              <ChevronDown size={20} color={COLORS.gold} />
+            </TouchableOpacity>
+            {showAuctionPlayerPicker && (
+              <ScrollView style={styles.auctionPickerDropdown} nestedScrollEnabled>
+                {players.filter(p => p.squad.length > 0).map((player) => (
+                  <TouchableOpacity
+                    key={player.id}
+                    style={styles.auctionPickerItem}
+                    onPress={() => {
+                      setSelectedAuctionPlayer(player.id);
+                      setShowAuctionPlayerPicker(false);
+                      setSelectedAuctionFootballer("");
+                    }}
+                  >
+                    <Text style={styles.auctionPickerItemText}>{player.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            
+            {selectedAuctionPlayer && (
+              <>
+                <Text style={[styles.auctionModalLabel, { marginTop: 16 }]}>Selecciona Futbolista:</Text>
+                <TouchableOpacity
+                  style={styles.auctionPickerButton}
+                  onPress={() => setShowAuctionFootballerPicker(!showAuctionFootballerPicker)}
+                >
+                  <Text style={styles.auctionPickerButtonText}>
+                    {selectedAuctionFootballer
+                      ? players.find(p => p.id === selectedAuctionPlayer)?.squad.find(f => f.id === selectedAuctionFootballer)?.name
+                      : "Seleccionar futbolista"}
+                  </Text>
+                  <ChevronDown size={20} color={COLORS.gold} />
+                </TouchableOpacity>
+                {showAuctionFootballerPicker && (
+                  <ScrollView style={styles.auctionPickerDropdown} nestedScrollEnabled>
+                    {players.find(p => p.id === selectedAuctionPlayer)?.squad.map((footballer) => (
+                      <TouchableOpacity
+                        key={footballer.id}
+                        style={styles.auctionPickerItem}
+                        onPress={() => {
+                          setSelectedAuctionFootballer(footballer.id);
+                          setShowAuctionFootballerPicker(false);
+                        }}
+                      >
+                        <Text style={styles.auctionPickerItemText}>
+                          {footballer.name} - ⭐ {footballer.rating}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </>
+            )}
+            
+            <View style={styles.auctionModalButtons}>
+              <TouchableOpacity
+                style={[styles.auctionModalButton, styles.auctionModalButtonCancel]}
+                onPress={() => {
+                  setShowAuctionModal(false);
+                  setSelectedAuctionPlayer("");
+                  setSelectedAuctionFootballer("");
+                  setShowAuctionPlayerPicker(false);
+                  setShowAuctionFootballerPicker(false);
+                }}
+              >
+                <Text style={styles.auctionModalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.auctionModalButton, 
+                  styles.auctionModalButtonStart,
+                  (!selectedAuctionPlayer || !selectedAuctionFootballer) && styles.auctionModalButtonDisabled
+                ]}
+                onPress={handleStartAuction}
+                disabled={!selectedAuctionPlayer || !selectedAuctionFootballer}
+              >
+                <Text style={styles.auctionModalButtonText}>Iniciar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      
+      {activeAuction && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.activeAuctionModal}>
+            <Text style={styles.activeAuctionTitle}>🔨 SUBASTA EN CURSO</Text>
+            
+            <View style={styles.activeAuctionTimer}>
+              <Text style={styles.activeAuctionTimerText}>⏱️ {auctionTimeRemaining}s</Text>
+            </View>
+            
+            <View style={styles.activeAuctionPlayer}>
+              <Text style={styles.activeAuctionPlayerLabel}>Vendedor:</Text>
+              <Text style={styles.activeAuctionPlayerName}>{activeAuction.playerName}</Text>
+            </View>
+            
+            <View style={styles.activeAuctionFootballer}>
+              <Text style={styles.activeAuctionFootballerName}>{activeAuction.footballerName}</Text>
+              <Text style={styles.activeAuctionFootballerRating}>
+                ⭐ {players.find(p => p.id === activeAuction.playerId)?.squad.find(f => f.id === activeAuction.footballerId)?.rating || "N/A"}
+              </Text>
+            </View>
+            
+            <View style={styles.activeAuctionBids}>
+              <Text style={styles.activeAuctionBidsTitle}>Ofertas:</Text>
+              {activeAuction.bids.length === 0 ? (
+                <Text style={styles.activeAuctionNoBids}>Sin ofertas todavía</Text>
+              ) : (
+                activeAuction.bids
+                  .sort((a, b) => b.amount - a.amount)
+                  .map((bid, index) => (
+                    <View key={bid.playerId} style={[
+                      styles.activeAuctionBidCard,
+                      index === 0 && styles.activeAuctionBidCardHighest
+                    ]}>
+                      <Text style={styles.activeAuctionBidPlayer}>
+                        {index === 0 ? "🥇 " : ""}{bid.playerName}
+                      </Text>
+                      <Text style={styles.activeAuctionBidAmount}>${bid.amount}M</Text>
+                    </View>
+                  ))
+              )}
+            </View>
+            
+            <ScrollView style={styles.activeAuctionPlayersList}>
+              <Text style={styles.activeAuctionPlayersTitle}>Participar:</Text>
+              {players.filter(p => p.id !== activeAuction.playerId).map((player) => {
+                const currentBid = activeAuction.bids.find(b => b.playerId === player.id);
+                const highestBid = activeAuction.bids.length > 0 
+                  ? Math.max(...activeAuction.bids.map(b => b.amount)) 
+                  : 5;
+                const nextBidAmount = highestBid + 5;
+                
+                return (
+                  <View key={player.id} style={styles.activeAuctionPlayerCard}>
+                    <View style={styles.activeAuctionPlayerInfo}>
+                      <Text style={styles.activeAuctionPlayerCardName}>{player.name}</Text>
+                      <Text style={styles.activeAuctionPlayerBudget}>💰 ${player.budget}M</Text>
+                      {currentBid && (
+                        <Text style={styles.activeAuctionPlayerCurrentBid}>Oferta: ${currentBid.amount}M</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.activeAuctionBidButton,
+                        nextBidAmount > player.budget && styles.activeAuctionBidButtonDisabled
+                      ]}
+                      onPress={() => handlePlaceBid(player.id)}
+                      disabled={nextBidAmount > player.budget}
+                    >
+                      <Text style={styles.activeAuctionBidButtonText}>+${5}M</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -2770,6 +3041,257 @@ const styles = StyleSheet.create({
   },
   formationCircleNumber: {
     fontSize: 14,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  auctionButton: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 12,
+    padding: 18,
+    alignItems: "center" as const,
+  },
+  auctionButtonText: {
+    fontSize: 18,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  modalOverlay: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    zIndex: 1000,
+  },
+  auctionModalContent: {
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 24,
+    padding: 24,
+    width: "90%" as const,
+    maxWidth: 400,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+  },
+  auctionModalTitle: {
+    fontSize: 24,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    textAlign: "center" as const,
+    marginBottom: 24,
+  },
+  auctionModalLabel: {
+    fontSize: 14,
+    color: "#fff",
+    marginBottom: 8,
+    fontWeight: "600" as const,
+  },
+  auctionPickerButton: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+  },
+  auctionPickerButtonText: {
+    fontSize: 16,
+    color: "#fff",
+  },
+  auctionPickerDropdown: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    maxHeight: 150,
+  },
+  auctionPickerItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2a3050",
+  },
+  auctionPickerItemText: {
+    fontSize: 16,
+    color: "#fff",
+  },
+  auctionModalButtons: {
+    flexDirection: "row" as const,
+    gap: 12,
+    marginTop: 24,
+  },
+  auctionModalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center" as const,
+  },
+  auctionModalButtonCancel: {
+    backgroundColor: "#666",
+  },
+  auctionModalButtonStart: {
+    backgroundColor: COLORS.gold,
+  },
+  auctionModalButtonDisabled: {
+    opacity: 0.5,
+  },
+  auctionModalButtonText: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  activeAuctionModal: {
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 24,
+    padding: 24,
+    width: "90%" as const,
+    maxHeight: "80%" as const,
+    borderWidth: 3,
+    borderColor: COLORS.gold,
+  },
+  activeAuctionTitle: {
+    fontSize: 28,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    textAlign: "center" as const,
+    marginBottom: 16,
+  },
+  activeAuctionTimer: {
+    alignItems: "center" as const,
+    backgroundColor: COLORS.dark,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  activeAuctionTimerText: {
+    fontSize: 36,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+  },
+  activeAuctionPlayer: {
+    alignItems: "center" as const,
+    marginBottom: 12,
+  },
+  activeAuctionPlayerLabel: {
+    fontSize: 12,
+    color: "#888",
+    marginBottom: 4,
+  },
+  activeAuctionPlayerName: {
+    fontSize: 18,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  activeAuctionFootballer: {
+    alignItems: "center" as const,
+    backgroundColor: COLORS.dark,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  activeAuctionFootballerName: {
+    fontSize: 20,
+    fontWeight: "bold" as const,
+    color: "#fff",
+    marginBottom: 4,
+  },
+  activeAuctionFootballerRating: {
+    fontSize: 24,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+  },
+  activeAuctionBids: {
+    marginBottom: 16,
+  },
+  activeAuctionBidsTitle: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: COLORS.gold,
+    marginBottom: 8,
+  },
+  activeAuctionNoBids: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center" as const,
+    fontStyle: "italic" as const,
+  },
+  activeAuctionBidCard: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    backgroundColor: COLORS.dark,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: COLORS.darkBorder,
+  },
+  activeAuctionBidCardHighest: {
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    backgroundColor: "#2a2f4a",
+  },
+  activeAuctionBidPlayer: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  activeAuctionBidAmount: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: COLORS.gold,
+  },
+  activeAuctionPlayersList: {
+    maxHeight: 200,
+  },
+  activeAuctionPlayersTitle: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: COLORS.gold,
+    marginBottom: 8,
+  },
+  activeAuctionPlayerCard: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    backgroundColor: COLORS.dark,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.darkBorder,
+  },
+  activeAuctionPlayerInfo: {
+    flex: 1,
+  },
+  activeAuctionPlayerCardName: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: "#fff",
+  },
+  activeAuctionPlayerBudget: {
+    fontSize: 14,
+    color: COLORS.gold,
+  },
+  activeAuctionPlayerCurrentBid: {
+    fontSize: 12,
+    color: "#4CAF50",
+    fontWeight: "600" as const,
+  },
+  activeAuctionBidButton: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  activeAuctionBidButtonDisabled: {
+    opacity: 0.3,
+  },
+  activeAuctionBidButtonText: {
+    fontSize: 16,
     fontWeight: "bold" as const,
     color: "#fff",
   },
