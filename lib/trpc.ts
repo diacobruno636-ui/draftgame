@@ -44,12 +44,19 @@ export const trpcClient = trpc.createClient({
             }
             
             if (contentType?.includes("application/json")) {
-              const errorData = await response.json();
+              const errorData = await response.clone().json();
               console.error("[tRPC Fetch] Error data:", errorData);
             } else {
-              const errorText = await response.text();
+              const errorText = await response.clone().text();
               console.error("[tRPC Fetch] Non-JSON error response:", errorText.substring(0, 500));
             }
+          }
+          
+          if (contentType && !contentType.includes("application/json")) {
+            console.error("[tRPC Fetch] Expected JSON but got:", contentType);
+            const responseText = await response.clone().text();
+            console.error("[tRPC Fetch] Response text:", responseText.substring(0, 500));
+            throw new Error(`Server returned non-JSON response: ${contentType}. This usually means the backend is not properly configured or there's a server error.`);
           }
           
           return response;

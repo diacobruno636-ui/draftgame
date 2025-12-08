@@ -11,7 +11,12 @@ app.use("*", cors());
 
 app.onError((err, c) => {
   console.error("[Hono Error]", err);
-  return c.json({ error: err.message || "Internal Server Error" }, 500);
+  console.error("[Hono Error Stack]", err.stack);
+  
+  return c.json({ 
+    error: err.message || "Internal Server Error",
+    details: err.stack?.split('\n')[0] || 'No additional details'
+  }, 500);
 });
 
 app.use(

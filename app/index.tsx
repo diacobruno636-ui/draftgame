@@ -249,8 +249,8 @@ export default function GameScreen() {
     { 
       enabled: !!roomCode && gameMode === "online",
       refetchInterval: 3000,
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: 1,
+      retryDelay: 1000,
       staleTime: 2000,
     }
   );
