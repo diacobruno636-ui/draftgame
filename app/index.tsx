@@ -209,18 +209,43 @@ export default function GameScreen() {
         const winner = players.find(p => p.id === highestBid.playerId);
         
         if (seller && footballer && winner) {
-          const lowestRatedPlayer = winner.squad.reduce((lowest, current) => 
-            current.rating < lowest.rating ? current : lowest, winner.squad[0]
+          const playersOfSamePosition = winner.squad.filter(f => f.position === footballer.position);
+          const lowestRatedPlayer = playersOfSamePosition.length > 0 
+            ? playersOfSamePosition.reduce((lowest, current) => 
+                current.rating < lowest.rating ? current : lowest, playersOfSamePosition[0]
+              )
+            : winner.squad.reduce((lowest, current) => 
+                current.rating < lowest.rating ? current : lowest, winner.squad[0]
+              );
+          
+          const usedIds = new Set(players.flatMap(p => p.squad.map(f => f.id)));
+          const availableReplacements = footballers.filter(f => 
+            f.position === footballer.position && 
+            f.rating <= 85 && 
+            !usedIds.has(f.id)
           );
+          
+          const randomReplacement = availableReplacements.length > 0
+            ? availableReplacements[Math.floor(Math.random() * availableReplacements.length)]
+            : null;
           
           setPlayers(prevPlayers => prevPlayers.map(p => {
             if (p.id === activeAuction.playerId) {
-              return {
-                ...p,
-                budget: p.budget + highestBid.amount,
-                squad: p.squad.filter(f => f.id !== activeAuction.footballerId),
-                totalSpent: p.totalSpent - highestBid.amount
-              };
+              if (randomReplacement) {
+                return {
+                  ...p,
+                  budget: p.budget + highestBid.amount,
+                  squad: [...p.squad.filter(f => f.id !== activeAuction.footballerId), randomReplacement],
+                  totalSpent: p.totalSpent - highestBid.amount
+                };
+              } else {
+                return {
+                  ...p,
+                  budget: p.budget + highestBid.amount,
+                  squad: p.squad.filter(f => f.id !== activeAuction.footballerId),
+                  totalSpent: p.totalSpent - highestBid.amount
+                };
+              }
             }
             if (p.id === highestBid.playerId) {
               const newSquad = p.squad.filter(f => f.id !== lowestRatedPlayer.id);
@@ -233,10 +258,14 @@ export default function GameScreen() {
             }
             return p;
           }));
-          Alert.alert(
-            "Subasta Finalizada",
-            `${highestBid.playerName} ganó ${footballer.name} por ${highestBid.amount}M.\n\nSe reemplazó a ${lowestRatedPlayer.name} (${lowestRatedPlayer.rating}) de su plantilla.`
-          );
+          
+          let alertMessage = `${highestBid.playerName} ganó ${footballer.name} por ${highestBid.amount}M.\n\nSe reemplazó a ${lowestRatedPlayer.name} (${lowestRatedPlayer.rating}) de su plantilla.`;
+          
+          if (randomReplacement) {
+            alertMessage += `\n\n${seller.name} recibió a ${randomReplacement.name} (${randomReplacement.rating}) como reemplazo.`;
+          }
+          
+          Alert.alert("Subasta Finalizada", alertMessage);
         }
       } else {
         Alert.alert("Subasta Finalizada", "No hubo ofertas");
@@ -811,7 +840,7 @@ export default function GameScreen() {
                   
                   {bestPlayerInfo && (
                     <View style={styles.bestPlayerBadge}>
-                      <Text style={styles.bestPlayerIcon}>⭐</Text>
+                      <Text style={styles.bestPlayerIcon}>🏆</Text>
                       <View style={styles.bestPlayerInfo}>
                         <Text style={styles.bestPlayerTitle}>Mejor Jugador</Text>
                         <Text style={styles.bestPlayerNameText}>
@@ -843,13 +872,7 @@ export default function GameScreen() {
         <View style={[styles.timerContainer, isTimerCritical && styles.timerContainerCritical]}>
           <Animated.View style={{ transform: [{ scale: isTimerCritical ? timerPulseAnim : 1 }] }}>
             <Text style={[styles.timerText, isTimerCritical && styles.timerTextCritical]}>⏱️ {timeRemaining}s</Text>
-            {isTimerCritical && (
-              <View style={styles.timerEffects}>
-                <Text style={styles.timerSparkle}>✨</Text>
-                <Text style={[styles.timerSparkle, { marginLeft: 10 }]}>✨</Text>
-                <Text style={[styles.timerSparkle, { marginLeft: 10 }]}>✨</Text>
-              </View>
-            )}
+
           </Animated.View>
         </View>
 
@@ -978,7 +1001,7 @@ export default function GameScreen() {
               {targetFootballer.name}
             </Text>
             {targetFootballer.isLegend && (
-              <Text style={styles.legendBadge}>⭐ LEYENDA ⭐</Text>
+              <Text style={styles.legendBadge}>🏆 LEYENDA 🏆</Text>
             )}
             {targetFootballer.isPrime && (
               <Text style={styles.primeBadge}>👑 PRIME 👑</Text>
@@ -1065,30 +1088,6 @@ export default function GameScreen() {
       return;
     }
     
-    const usedIds = new Set(players.flatMap(p => p.squad.map(f => f.id)));
-    const availableDefenders = footballers.filter(f => 
-      f.position === "Defender" && 
-      f.rating <= 85 && 
-      !usedIds.has(f.id)
-    );
-    
-    if (availableDefenders.length === 0) {
-      Alert.alert("Error", "No hay defensores disponibles para reemplazo");
-      return;
-    }
-    
-    const randomDefender = availableDefenders[Math.floor(Math.random() * availableDefenders.length)];
-    
-    setPlayers(prevPlayers => prevPlayers.map(p => {
-      if (p.id === selectedAuctionPlayer) {
-        return {
-          ...p,
-          squad: [...p.squad, randomDefender]
-        };
-      }
-      return p;
-    }));
-    
     setActiveAuction({
       playerId: player.id,
       playerName: player.name,
@@ -1100,11 +1099,6 @@ export default function GameScreen() {
     setShowAuctionModal(false);
     setSelectedAuctionPlayer("");
     setSelectedAuctionFootballer("");
-    
-    Alert.alert(
-      "Defensa de Reemplazo",
-      `Has recibido a ${randomDefender.name} (${randomDefender.rating}) como reemplazo automático`
-    );
   };
   
   const handlePlaceBid = (playerId: string) => {
@@ -1241,7 +1235,7 @@ export default function GameScreen() {
                       setShowOfferedPlayerPicker(false);
                     }}
                   >
-                    <Text style={styles.pickerItemText}>{footballer.name} (⭐ {footballer.rating})</Text>
+                    <Text style={styles.pickerItemText}>{footballer.name} ({footballer.rating})</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1274,7 +1268,7 @@ export default function GameScreen() {
                       setShowRequestedPlayerPicker(false);
                     }}
                   >
-                    <Text style={styles.pickerItemText}>{footballer.name} (⭐ {footballer.rating})</Text>
+                    <Text style={styles.pickerItemText}>{footballer.name} ({footballer.rating})</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1634,7 +1628,7 @@ export default function GameScreen() {
                         }}
                       >
                         <Text style={styles.auctionPickerItemText}>
-                          {footballer.name} - ⭐ {footballer.rating}
+                          {footballer.name} - {footballer.rating}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -1690,7 +1684,7 @@ export default function GameScreen() {
             <View style={styles.activeAuctionFootballer}>
               <Text style={styles.activeAuctionFootballerName}>{activeAuction.footballerName}</Text>
               <Text style={styles.activeAuctionFootballerRating}>
-                ⭐ {players.find(p => p.id === activeAuction.playerId)?.squad.find(f => f.id === activeAuction.footballerId)?.rating || "N/A"}
+                {players.find(p => p.id === activeAuction.playerId)?.squad.find(f => f.id === activeAuction.footballerId)?.rating || "N/A"}
               </Text>
             </View>
             
