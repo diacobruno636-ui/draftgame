@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useGame, getRarity } from "@/contexts/GameContext";
-import { Footballer } from "@/mocks/footballers";
+import { Footballer, footballers } from "@/mocks/footballers";
 import { ChevronUp, Plus, Minus, ChevronDown, Flame, Copy } from "lucide-react-native";
 import { COLORS } from "@/constants/colors";
 import { trpc } from "@/lib/trpc";
@@ -1059,6 +1059,30 @@ export default function GameScreen() {
       return;
     }
     
+    const usedIds = new Set(players.flatMap(p => p.squad.map(f => f.id)));
+    const availableDefenders = footballers.filter(f => 
+      f.position === "Defender" && 
+      f.rating <= 85 && 
+      !usedIds.has(f.id)
+    );
+    
+    if (availableDefenders.length === 0) {
+      Alert.alert("Error", "No hay defensores disponibles para reemplazo");
+      return;
+    }
+    
+    const randomDefender = availableDefenders[Math.floor(Math.random() * availableDefenders.length)];
+    
+    setPlayers(prevPlayers => prevPlayers.map(p => {
+      if (p.id === selectedAuctionPlayer) {
+        return {
+          ...p,
+          squad: [...p.squad, randomDefender]
+        };
+      }
+      return p;
+    }));
+    
     setActiveAuction({
       playerId: player.id,
       playerName: player.name,
@@ -1070,6 +1094,11 @@ export default function GameScreen() {
     setShowAuctionModal(false);
     setSelectedAuctionPlayer("");
     setSelectedAuctionFootballer("");
+    
+    Alert.alert(
+      "Defensa de Reemplazo",
+      `Has recibido a ${randomDefender.name} (${randomDefender.rating}) como reemplazo automático`
+    );
   };
   
   const handlePlaceBid = (playerId: string) => {

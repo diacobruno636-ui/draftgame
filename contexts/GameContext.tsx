@@ -96,13 +96,14 @@ export const [GameProvider, useGame] = createContextHook(() => {
     setPhase("waiting");
   }, []);
 
-  const selectRandomFootballer = useCallback((positionIndex: number): Footballer | null => {
+  const selectRandomFootballer = useCallback((positionIndex: number, maxRating?: number): Footballer | null => {
     const currentPosition = POSITION_ORDER[positionIndex];
     
     const availableFootballers = footballers.filter(
       (f) =>
         !usedFootballerIds.current.has(f.id) &&
-        f.position === currentPosition
+        f.position === currentPosition &&
+        (maxRating ? f.rating <= maxRating : true)
     );
 
     if (availableFootballers.length === 0) {
