@@ -206,8 +206,13 @@ export default function GameScreen() {
         const highestBid = activeAuction.bids.reduce((max, bid) => bid.amount > max.amount ? bid : max, activeAuction.bids[0]);
         const seller = players.find(p => p.id === activeAuction.playerId);
         const footballer = seller?.squad.find(f => f.id === activeAuction.footballerId);
+        const winner = players.find(p => p.id === highestBid.playerId);
         
-        if (seller && footballer) {
+        if (seller && footballer && winner) {
+          const lowestRatedPlayer = winner.squad.reduce((lowest, current) => 
+            current.rating < lowest.rating ? current : lowest, winner.squad[0]
+          );
+          
           setPlayers(prevPlayers => prevPlayers.map(p => {
             if (p.id === activeAuction.playerId) {
               return {
@@ -218,10 +223,11 @@ export default function GameScreen() {
               };
             }
             if (p.id === highestBid.playerId) {
+              const newSquad = p.squad.filter(f => f.id !== lowestRatedPlayer.id);
               return {
                 ...p,
                 budget: p.budget - highestBid.amount,
-                squad: [...p.squad, footballer],
+                squad: [...newSquad, footballer],
                 totalSpent: p.totalSpent + highestBid.amount
               };
             }
@@ -229,7 +235,7 @@ export default function GameScreen() {
           }));
           Alert.alert(
             "Subasta Finalizada",
-            `${highestBid.playerName} ganó ${footballer.name} por ${highestBid.amount}M`
+            `${highestBid.playerName} ganó ${footballer.name} por ${highestBid.amount}M.\n\nSe reemplazó a ${lowestRatedPlayer.name} (${lowestRatedPlayer.rating}) de su plantilla.`
           );
         }
       } else {
