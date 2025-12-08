@@ -320,10 +320,20 @@ export const [GameProvider, useGame] = createContextHook(() => {
         setPlayers((prevPlayers) =>
           prevPlayers.map((p) => {
             if (p.id === currentBid.playerId) {
+              const currentSquad = p.squad;
+              let newSquad = [...currentSquad, targetFootballer];
+              
+              if (currentSquad.length > 0) {
+                const lowestRatedPlayer = currentSquad.reduce((lowest, current) => 
+                  current.rating < lowest.rating ? current : lowest
+                );
+                newSquad = newSquad.filter((footballer) => footballer.id !== lowestRatedPlayer.id);
+              }
+              
               return {
                 ...p,
                 budget: p.budget - finalAmount,
-                squad: [...p.squad, targetFootballer],
+                squad: newSquad,
                 totalSpent: p.totalSpent + finalAmount,
               };
             }
