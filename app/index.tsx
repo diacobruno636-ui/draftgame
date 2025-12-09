@@ -51,7 +51,7 @@ export default function GameScreen() {
   } = useGame();
 
 
-  const [gameMode, setGameMode] = useState<"menu" | "local" | "online" | "intro">("menu");
+  const [gameMode, setGameMode] = useState<"menu" | "local" | "online">("menu");
   const [onlineMode, setOnlineMode] = useState<"create" | "join" | "">(""  );
   const [roomCode, setRoomCode] = useState<string>("");
   const [playerName, setPlayerName] = useState<string>("");
@@ -385,7 +385,7 @@ export default function GameScreen() {
   const handleSetupComplete = () => {
     const count = parseInt(numPlayersInput);
     if (count >= 2 && count <= 6 && playerNames.length === count) {
-      setGameMode("intro");
+      initializePlayers(count, playerNames);
     }
   };
 
@@ -404,119 +404,6 @@ export default function GameScreen() {
     }
     
     skipFootballer();
-  };
-
-  const renderIntroductionPhase = () => {
-    return (
-      <ScrollView style={styles.introContainer}>
-        <Text style={styles.introTitle}>Introducción</Text>
-        
-        <View style={styles.introSection}>
-          <Text style={styles.introSectionTitle}>¿Cómo se Juega?</Text>
-          <Text style={styles.introText}>
-            Draft Kings es un juego de subastas de futbolistas donde competirás con otros jugadores para formar el mejor equipo.
-          </Text>
-          <Text style={styles.introText}>
-            • Cada jugador tiene un presupuesto de $1000M
-          </Text>
-          <Text style={styles.introText}>
-            • Debes formar un equipo completo: 1 arquero, 4 defensas, 3 mediocampistas y 3 delanteros
-          </Text>
-          <Text style={styles.introText}>
-            • El jugador con el mejor equipo al final gana
-          </Text>
-        </View>
-
-        <View style={styles.introSection}>
-          <Text style={styles.introSectionTitle}>Sistema de Subastas</Text>
-          <Text style={styles.introText}>
-            Cada ronda presenta un futbolista oculto con pistas que se revelan gradualmente:
-          </Text>
-          <View style={styles.hintExample}>
-            <Text style={styles.hintExampleText}>⚽ Posición</Text>
-            <Text style={styles.hintExampleText}>🎂 Edad</Text>
-            <Text style={styles.hintExampleText}>🌍 Nacionalidad</Text>
-            <Text style={styles.hintExampleText}>📏 Altura</Text>
-            <Text style={styles.hintExampleText}>🏆 Liga</Text>
-          </View>
-          <Text style={styles.introText}>
-            Tienes 15 segundos para ofertar. Las ofertas aumentan de 5M en 5M desde el precio base de $45M.
-          </Text>
-        </View>
-
-        <View style={styles.introSection}>
-          <Text style={styles.introSectionTitle}>Saltos de Jugadores</Text>
-          <Text style={styles.introText}>
-            • Puedes saltar hasta 2 jugadores por posición si no te interesan
-          </Text>
-          <Text style={styles.introText}>
-            • Si ningún jugador oferta, el futbolista se salta automáticamente
-          </Text>
-        </View>
-
-        <View style={styles.introSection}>
-          <Text style={styles.introSectionTitle}>Sistema de Rarezas</Text>
-          <Text style={styles.introText}>Los jugadores se clasifican en 7 rarezas según su rating:</Text>
-          
-          <View style={styles.rarityList}>
-            <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
-              <View style={styles.ornateCorner} />
-              <Text style={[styles.rarityName, { color: COLORS.gold }]}>👑 GOAT</Text>
-              <Text style={styles.rarityDescription}>Jugadores Prime (más de 90)</Text>
-            </View>
-            
-            <View style={[styles.rarityItem, { borderColor: COLORS.legendRed }]}>
-              <View style={styles.ornateCorner} />
-              <Text style={[styles.rarityName, { color: COLORS.legendRed }]}>🏆 LEGEND</Text>
-              <Text style={styles.rarityDescription}>Leyendas del fútbol</Text>
-            </View>
-            
-            <View style={[styles.rarityItem, { borderColor: COLORS.futties }]}>
-              <Text style={[styles.rarityName, { color: COLORS.futties }]}>⭐ FUTTIES</Text>
-              <Text style={styles.rarityDescription}>Promesas jóvenes (78-89)</Text>
-            </View>
-            
-            <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
-              <Text style={[styles.rarityName, { color: COLORS.gold }]}>🥇 GOLD</Text>
-              <Text style={styles.rarityDescription}>Rating 83-89</Text>
-            </View>
-            
-            <View style={[styles.rarityItem, { borderColor: COLORS.silver }]}>
-              <Text style={[styles.rarityName, { color: COLORS.silver }]}>🥈 SILVER</Text>
-              <Text style={styles.rarityDescription}>Rating 75-82</Text>
-            </View>
-            
-            <View style={[styles.rarityItem, { borderColor: COLORS.bronze }]}>
-              <Text style={[styles.rarityName, { color: COLORS.bronze }]}>🥉 BRONZE</Text>
-              <Text style={styles.rarityDescription}>Rating menor a 75</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.introSection}>
-          <Text style={styles.introSectionTitle}>Transferencias y Subastas</Text>
-          <Text style={styles.introText}>
-            • Después de cada posición, puedes intercambiar jugadores con otros
-          </Text>
-          <Text style={styles.introText}>
-            • También puedes iniciar subastas de tus propios jugadores
-          </Text>
-          <Text style={styles.introText}>
-            • Cuando subastas un jugador, recibirás automáticamente un reemplazo de la misma posición (máx 85 de rating)
-          </Text>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.startFromIntroButton}
-          onPress={() => {
-            const count = parseInt(numPlayersInput);
-            initializePlayers(count, playerNames);
-          }}
-        >
-          <Text style={styles.startFromIntroButtonText}>¡COMENZAR JUEGO!</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    );
   };
 
   const renderMenuPhase = () => {
@@ -1093,24 +980,12 @@ export default function GameScreen() {
 
     const isPrime = targetFootballer?.isPrime || false;
     const isHighRating = (targetFootballer?.rating || 0) >= 90;
-    const isLegendOrGoat = rarity === "LEGEND" || rarity === "GOAT";
 
     return (
       <ScrollView style={styles.revealedContainer}>
         <Text style={styles.revealedTitle}>🎉 ¡Jugador Ganado!</Text>
         {targetFootballer && currentBid && (
-          <View style={[
-            styles.revealedCard,
-            { borderColor: rarityColors[rarity] }
-          ]}>
-            {isLegendOrGoat && (
-              <>
-                <View style={[styles.ornateTopLeft, { borderColor: rarityColors[rarity] }]} />
-                <View style={[styles.ornateTopRight, { borderColor: rarityColors[rarity] }]} />
-                <View style={[styles.ornateBottomLeft, { borderColor: rarityColors[rarity] }]} />
-                <View style={[styles.ornateBottomRight, { borderColor: rarityColors[rarity] }]} />
-              </>
-            )}
+          <View style={styles.revealedCard}>
             <View style={[styles.rarityBadge, { backgroundColor: rarityColors[rarity] }]}>
               <Text style={styles.rarityText}>{rarity}</Text>
             </View>
@@ -1686,7 +1561,6 @@ export default function GameScreen() {
       {gameMode === "menu" && renderMenuPhase()}
       {gameMode === "online" && renderOnlineSetup()}
       {gameMode === "local" && phase === "setup" && renderSetupPhase()}
-      {gameMode === "intro" && renderIntroductionPhase()}
       {phase === "waiting" && renderWaitingPhase()}
       {phase === "active" && renderActivePhase()}
       {phase === "revealed" && renderRevealedPhase()}
@@ -2524,8 +2398,8 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: "center" as const,
     borderWidth: 3,
+    borderColor: COLORS.gold,
     marginHorizontal: 20,
-    position: "relative" as const,
   },
   rarityBadge: {
     paddingHorizontal: 20,
@@ -3449,135 +3323,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold" as const,
     color: "#fff",
-  },
-  introContainer: {
-    flex: 1,
-    backgroundColor: COLORS.dark,
-    padding: 20,
-  },
-  introTitle: {
-    fontSize: 42,
-    fontWeight: "900" as const,
-    color: COLORS.gold,
-    textAlign: "center" as const,
-    marginTop: 20,
-    marginBottom: 30,
-    letterSpacing: 3,
-  },
-  introSection: {
-    backgroundColor: COLORS.darkCard,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.darkBorder,
-  },
-  introSectionTitle: {
-    fontSize: 22,
-    fontWeight: "bold" as const,
-    color: COLORS.gold,
-    marginBottom: 12,
-  },
-  introText: {
-    fontSize: 15,
-    color: "#ddd",
-    marginBottom: 8,
-    lineHeight: 22,
-  },
-  hintExample: {
-    backgroundColor: COLORS.dark,
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 12,
-    gap: 8,
-  },
-  hintExampleText: {
-    fontSize: 14,
-    color: "#fff",
-    marginBottom: 4,
-  },
-  rarityList: {
-    marginTop: 16,
-    gap: 12,
-  },
-  rarityItem: {
-    backgroundColor: COLORS.dark,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    position: "relative" as const,
-  },
-  rarityName: {
-    fontSize: 18,
-    fontWeight: "bold" as const,
-    marginBottom: 4,
-  },
-  rarityDescription: {
-    fontSize: 14,
-    color: "#888",
-  },
-  ornateCorner: {
-    position: "absolute" as const,
-    top: 4,
-    right: 4,
-    width: 20,
-    height: 20,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderColor: "inherit",
-  },
-  startFromIntroButton: {
-    backgroundColor: COLORS.gold,
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 30,
-    alignItems: "center" as const,
-  },
-  startFromIntroButtonText: {
-    fontSize: 20,
-    fontWeight: "900" as const,
-    color: "#fff",
-    letterSpacing: 2,
-  },
-  ornateTopLeft: {
-    position: "absolute" as const,
-    top: -3,
-    left: -3,
-    width: 40,
-    height: 40,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderTopLeftRadius: 24,
-  },
-  ornateTopRight: {
-    position: "absolute" as const,
-    top: -3,
-    right: -3,
-    width: 40,
-    height: 40,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderTopRightRadius: 24,
-  },
-  ornateBottomLeft: {
-    position: "absolute" as const,
-    bottom: -3,
-    left: -3,
-    width: 40,
-    height: 40,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderBottomLeftRadius: 24,
-  },
-  ornateBottomRight: {
-    position: "absolute" as const,
-    bottom: -3,
-    right: -3,
-    width: 40,
-    height: 40,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderBottomRightRadius: 24,
   },
 
 });
