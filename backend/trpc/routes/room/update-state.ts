@@ -14,7 +14,19 @@ export default publicProcedure
     const normalizedCode = input.roomCode.trim().toUpperCase();
 
     try {
-      const serializedState = input.gameState === null ? null : JSON.stringify(input.gameState);
+      let serializedState: string | null = null;
+      
+      if (input.gameState !== null && input.gameState !== undefined) {
+        try {
+          serializedState = JSON.stringify(input.gameState);
+        } catch (error) {
+          console.error("[room.updateState] Failed to stringify gameState:", error);
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid game state data",
+          });
+        }
+      }
 
       const updatedRoom = await prisma.room.update({
         where: { code: normalizedCode },

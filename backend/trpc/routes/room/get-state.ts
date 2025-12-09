@@ -20,15 +20,20 @@ type StoredRoom = {
   players: StoredRoomPlayer[];
 };
 
-const parseJsonField = <T>(value: string | null): T | null => {
-  if (!value) {
+const parseJsonField = <T>(value: string | null | undefined): T | null => {
+  if (!value || value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    console.error("[room.getState] Expected string but got:", typeof value, value);
     return null;
   }
 
   try {
     return JSON.parse(value) as T;
   } catch (error) {
-    console.error("[room.getState] Failed to parse JSON field", error);
+    console.error("[room.getState] Failed to parse JSON field:", error, "Value:", value?.substring(0, 100));
     return null;
   }
 };
