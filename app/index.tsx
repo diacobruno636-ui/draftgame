@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useGame, getRarity } from "@/contexts/GameContext";
 import { Footballer, footballers } from "@/mocks/footballers";
-import { ChevronUp, Plus, Minus, ChevronDown, Flame, Copy } from "lucide-react-native";
+import { ChevronUp, Plus, Minus, ChevronDown, Copy } from "lucide-react-native";
 import { COLORS } from "@/constants/colors";
 import { trpc } from "@/lib/trpc";
 import * as Clipboard from "expo-clipboard";
@@ -84,6 +84,9 @@ export default function GameScreen() {
   const sparkleAnim3 = useState(new Animated.Value(0))[0];
   const pulseAnim = useState(new Animated.Value(1))[0];
   const timerPulseAnim = useState(new Animated.Value(1))[0];
+  const borderGlowAnim = useState(new Animated.Value(0))[0];
+  const textShineAnim = useState(new Animated.Value(0))[0];
+  const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
     if (phase === "voting") {
@@ -162,8 +165,38 @@ export default function GameScreen() {
           ])
         ).start();
       }
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(borderGlowAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: false,
+          }),
+          Animated.timing(borderGlowAnim, {
+            toValue: 0,
+            duration: 1500,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(textShineAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(textShineAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     }
-  }, [phase, targetFootballer, sparkleAnim1, sparkleAnim2, sparkleAnim3, pulseAnim]);
+  }, [phase, targetFootballer, sparkleAnim1, sparkleAnim2, sparkleAnim3, pulseAnim, borderGlowAnim, textShineAnim]);
 
   useEffect(() => {
     if (phase === "active" && timeRemaining <= 5) {
@@ -273,7 +306,7 @@ export default function GameScreen() {
       setActiveAuction(null);
       setAuctionTimeRemaining(10);
     }
-  }, [activeAuction, auctionTimeRemaining, players]);
+  }, [activeAuction, auctionTimeRemaining, players, setPlayers]);
 
 
 
@@ -971,74 +1004,54 @@ export default function GameScreen() {
       FUTTIES: COLORS.futties,
     };
 
-    const getRatingColor = (rating: number) => {
-      if (rating >= 90) return "#FF4444";
-      if (rating >= 85) return COLORS.gold;
-      if (rating >= 82) return COLORS.silver;
-      return COLORS.bronze;
-    };
+    const borderColor = rarityColors[rarity];
+    const glowColor = borderGlowAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [borderColor, '#fff'],
+    });
 
-    const isPrime = targetFootballer?.isPrime || false;
-    const isHighRating = (targetFootballer?.rating || 0) >= 90;
+    const textShine = textShineAnim.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0.8, 1, 0.8],
+    });
 
     return (
       <ScrollView style={styles.revealedContainer}>
         <Text style={styles.revealedTitle}>🎉 ¡Jugador Ganado!</Text>
         {targetFootballer && currentBid && (
-          <View style={styles.revealedCard}>
-            <View style={[styles.rarityBadge, { backgroundColor: rarityColors[rarity] }]}>
-              <Text style={styles.rarityText}>{rarity}</Text>
-            </View>
-            <Image
-              source={{ uri: targetFootballer.imageUrl }}
-              style={styles.revealedImage}
-              resizeMode="contain"
-            />
-            <Text style={[
-              styles.revealedName,
-              targetFootballer.isPrime && styles.primeText
+          <View style={styles.cardContainer}>
+            <Animated.View style={[
+              styles.newRevealedCard,
+              {
+                borderColor: glowColor,
+                shadowColor: glowColor,
+              }
             ]}>
-              {targetFootballer.name}
-            </Text>
-            {targetFootballer.isLegend && (
-              <Text style={styles.legendBadge}>🏆 LEYENDA 🏆</Text>
-            )}
-            {targetFootballer.isPrime && (
-              <Text style={styles.primeBadge}>👑 PRIME 👑</Text>
-            )}
-            <Text style={styles.revealedPosition}>{targetFootballer.position}</Text>
-            <Text style={styles.revealedInfo}>
-              {targetFootballer.nationality} | {targetFootballer.league}
-            </Text>
-            <View style={[styles.ratingContainer, isPrime && styles.ratingContainerPrime]}>
-              <Text style={styles.revealedRatingLabel}>RATING</Text>
-              <View style={styles.ratingValueContainer}>
-                {isPrime ? (
-                  <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                    <Text style={[styles.revealedRatingValue, { color: getRatingColor(targetFootballer.rating) }, styles.primeRatingText]}>
-                      {targetFootballer.rating}
-                    </Text>
-                  </Animated.View>
-                ) : (
-                  <Text style={[styles.revealedRatingValue, { color: getRatingColor(targetFootballer.rating) }]}>
-                    {targetFootballer.rating}
-                  </Text>
-                )}
-                {(isPrime || isHighRating) && (
-                  <View style={styles.effectsContainer}>
-                    {isPrime && <Text style={styles.goatEmoji}>🐐</Text>}
-                    <Animated.Text style={[styles.sparkEffect, { opacity: sparkleAnim1 }]}>✨</Animated.Text>
-                    <Animated.Text style={[styles.sparkEffect, { opacity: sparkleAnim2 }]}>✨</Animated.Text>
-                    <Animated.Text style={[styles.sparkEffect, { opacity: sparkleAnim3 }]}>✨</Animated.Text>
-                    {isHighRating && <Flame size={24} color="#FF4444" />}
-                  </View>
-                )}
+              <View style={[styles.rarityBadgeNew, { backgroundColor: borderColor }]}>
+                <Text style={styles.rarityTextNew}>{rarity}</Text>
               </View>
-            </View>
-            <View style={styles.winnerInfo}>
-              <Text style={styles.winnerText}>Ganador: {currentBid.playerName}</Text>
-              <Text style={styles.winnerAmount}>💰 ${currentBid.amount}M</Text>
-            </View>
+
+              <Animated.Text style={[
+                styles.revealedNameNew,
+                { opacity: textShine }
+              ]}>
+                {targetFootballer.name.toUpperCase()}
+              </Animated.Text>
+
+              <View style={styles.ratingCircle}>
+                <Text style={styles.ratingValueNew}>{targetFootballer.rating}</Text>
+              </View>
+
+              <View style={styles.priceContainer}>
+                <Text style={styles.priceLabel}>PRECIO</Text>
+                <Text style={styles.priceValue}>${currentBid.amount}M</Text>
+              </View>
+
+              <View style={styles.winnerBanner}>
+                <Text style={styles.winnerLabelNew}>GANADOR</Text>
+                <Text style={styles.winnerNameNew}>{currentBid.playerName}</Text>
+              </View>
+            </Animated.View>
           </View>
         )}
 
@@ -1556,16 +1569,87 @@ export default function GameScreen() {
     );
   };
 
+  const renderIntro = () => {
+    return (
+      <View style={styles.introContainer}>
+        <ScrollView contentContainerStyle={styles.introContent}>
+          <Text style={styles.introTitle}>⚽ CÓMO JUGAR ⚽</Text>
+          
+          <View style={styles.introSection}>
+            <Text style={styles.introSectionTitle}>🎴 RAREZAS DE CARTAS</Text>
+            <View style={styles.rarityList}>
+              <View style={[styles.rarityItem, { borderColor: COLORS.bronze }]}>
+                <Text style={styles.rarityItemText}>🟤 BRONZE (Rating 60-75)</Text>
+              </View>
+              <View style={[styles.rarityItem, { borderColor: COLORS.silver }]}>
+                <Text style={styles.rarityItemText}>⚪ SILVER (Rating 76-82)</Text>
+              </View>
+              <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
+                <Text style={styles.rarityItemText}>🟡 GOLD (Rating 83-89)</Text>
+              </View>
+              <View style={[styles.rarityItem, { borderColor: COLORS.futties }]}>
+                <Text style={styles.rarityItemText}>💜 FUTTIES (Especiales)</Text>
+              </View>
+              <View style={[styles.rarityItem, { borderColor: COLORS.legendRed }]}>
+                <Text style={styles.rarityItemText}>🔴 LEGEND (Leyendas)</Text>
+              </View>
+              <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
+                <Text style={styles.rarityItemText}>👑 GOAT (Los Mejores)</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.introSection}>
+            <Text style={styles.introSectionTitle}>🎯 OBJETIVO</Text>
+            <Text style={styles.introText}>
+              Forma el mejor equipo (4-3-3) comprando jugadores en subastas. Gestiona tu presupuesto de $1000M sabiamente.
+            </Text>
+          </View>
+
+          <View style={styles.introSection}>
+            <Text style={styles.introSectionTitle}>💰 SUBASTAS</Text>
+            <Text style={styles.introText}>
+              • Cada jugador aparece con pistas
+              • Incrementa la oferta en $5M
+              • El temporizador se reinicia con cada oferta
+              • Puedes saltar 2 jugadores por posición
+            </Text>
+          </View>
+
+          <View style={styles.introSection}>
+            <Text style={styles.introSectionTitle}>🔄 TRANSFERENCIAS</Text>
+            <Text style={styles.introText}>
+              Entre posiciones puedes intercambiar jugadores con otros usuarios o subastar tus propios jugadores.
+            </Text>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.introButton}
+            onPress={() => setShowIntro(false)}
+          >
+            <Text style={styles.introButtonText}>¡COMENZAR A JUGAR!</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {gameMode === "menu" && renderMenuPhase()}
-      {gameMode === "online" && renderOnlineSetup()}
-      {gameMode === "local" && phase === "setup" && renderSetupPhase()}
-      {phase === "waiting" && renderWaitingPhase()}
-      {phase === "active" && renderActivePhase()}
-      {phase === "revealed" && renderRevealedPhase()}
-      {phase === "transfer" && renderTransferPhase()}
-      {phase === "voting" && renderVotingPhase()}
+      {showIntro && gameMode === "menu" ? (
+        renderIntro()
+      ) : (
+        <>
+          {gameMode === "menu" && renderMenuPhase()}
+          {gameMode === "online" && renderOnlineSetup()}
+          {gameMode === "local" && phase === "setup" && renderSetupPhase()}
+          {phase === "waiting" && renderWaitingPhase()}
+          {phase === "active" && renderActivePhase()}
+          {phase === "revealed" && renderRevealedPhase()}
+          {phase === "transfer" && renderTransferPhase()}
+          {phase === "voting" && renderVotingPhase()}
+        </>
+      )}
       
       {showAuctionModal && (
         <View style={styles.modalOverlay}>
@@ -3323,6 +3407,183 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold" as const,
     color: "#fff",
+  },
+  cardContainer: {
+    padding: 20,
+    alignItems: "center" as const,
+  },
+  newRevealedCard: {
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 32,
+    padding: 40,
+    width: "100%" as const,
+    maxWidth: 400,
+    alignItems: "center" as const,
+    borderWidth: 6,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  rarityBadgeNew: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  rarityTextNew: {
+    fontSize: 20,
+    fontWeight: "900" as const,
+    color: "#fff",
+    letterSpacing: 3,
+  },
+  revealedNameNew: {
+    fontSize: 34,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    marginBottom: 30,
+    textAlign: "center" as const,
+    letterSpacing: 2,
+    textShadowColor: COLORS.gold,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+  },
+  ratingCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.dark,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    marginBottom: 24,
+    borderWidth: 4,
+    borderColor: COLORS.gold,
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  ratingValueNew: {
+    fontSize: 56,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+  },
+  priceContainer: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+  },
+  priceLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: "#888",
+    letterSpacing: 2,
+    marginBottom: 4,
+    textAlign: "center" as const,
+  },
+  priceValue: {
+    fontSize: 32,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    textAlign: "center" as const,
+  },
+  winnerBanner: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    width: "100%" as const,
+    alignItems: "center" as const,
+  },
+  winnerLabelNew: {
+    fontSize: 14,
+    fontWeight: "700" as const,
+    color: "#000",
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  winnerNameNew: {
+    fontSize: 24,
+    fontWeight: "900" as const,
+    color: "#000",
+  },
+  introContainer: {
+    flex: 1,
+    backgroundColor: COLORS.dark,
+  },
+  introContent: {
+    padding: 24,
+  },
+  introTitle: {
+    fontSize: 32,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    textAlign: "center" as const,
+    marginBottom: 32,
+    letterSpacing: 2,
+  },
+  introSection: {
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.darkBorder,
+  },
+  introSectionTitle: {
+    fontSize: 20,
+    fontWeight: "800" as const,
+    color: COLORS.gold,
+    marginBottom: 16,
+    letterSpacing: 1,
+  },
+  introText: {
+    fontSize: 16,
+    color: "#fff",
+    lineHeight: 24,
+  },
+  rarityList: {
+    gap: 12,
+  },
+  rarityItem: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 3,
+  },
+  rarityItemText: {
+    fontSize: 16,
+    fontWeight: "700" as const,
+    color: "#fff",
+  },
+  introButton: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 40,
+    alignItems: "center" as const,
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  introButtonText: {
+    fontSize: 20,
+    fontWeight: "900" as const,
+    color: "#fff",
+    letterSpacing: 2,
   },
 
 });
