@@ -475,21 +475,25 @@ export default function GameScreen() {
         <View style={styles.setupCard}>
           <Text style={styles.setupCardTitle}>Selecciona Modo de Juego</Text>
           
-          <TouchableOpacity 
-            style={styles.modeButton}
-            onPress={() => setGameMode("local")}
-          >
-            <Text style={styles.modeButtonText}>🏠 Jugar Local</Text>
-            <Text style={styles.modeButtonSubtext}>Varios jugadores en el mismo dispositivo</Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => setGameMode("local")}
+            >
+              <Text style={styles.modeButtonText}>JUGAR LOCAL</Text>
+              <Text style={styles.modeButtonSubtext}>Varios jugadores en el mismo dispositivo</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-          <TouchableOpacity 
-            style={styles.modeButton}
-            onPress={() => { setGameMode("online"); setOnlineMode(""); }}
-          >
-            <Text style={styles.modeButtonText}>🌐 Jugar Online</Text>
-            <Text style={styles.modeButtonSubtext}>Con amigos en diferentes dispositivos</Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity 
+              style={styles.modeButton}
+              onPress={() => { setGameMode("online"); setOnlineMode(""); }}
+            >
+              <Text style={styles.modeButtonText}>JUGAR ONLINE</Text>
+              <Text style={styles.modeButtonSubtext}>Con amigos en diferentes dispositivos</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </View>
     );
@@ -651,7 +655,7 @@ export default function GameScreen() {
               <View key={player.id} style={styles.onlinePlayerCard}>
                 <Text style={styles.onlinePlayerName}>
                   {index + 1}. {player.name} {player.id === playerId && "(Tú)"}
-                  {index === 0 && " 👑"}
+                  {index === 0 && " HOST"}
                 </Text>
               </View>
             ))}
@@ -795,12 +799,22 @@ export default function GameScreen() {
       outputRange: [0.7, 1, 0.7],
     });
 
+    const pulseScale = pulseAnim.interpolate({
+      inputRange: [1, 1.05],
+      outputRange: [1, 1.05],
+    });
+
     return (
       <ScrollView style={styles.waitingContainer}>
         <View style={styles.statsHeader}>
           <View style={styles.statsHeaderGradient}>
+            <View style={styles.ornamentContainer}>
+              <View style={styles.ornament} />
+            </View>
             <Animated.Text style={[styles.statsTitle, { opacity: titleShine }]}>ESTADÍSTICAS</Animated.Text>
-            <View style={styles.statsDivider} />
+            <View style={styles.ornamentContainer}>
+              <View style={styles.ornament} />
+            </View>
             
             <View style={styles.nextPositionCard}>
               <Animated.Text style={[styles.nextPositionLabel, { opacity: titleShine }]}>PRÓXIMA POSICIÓN</Animated.Text>
@@ -848,7 +862,7 @@ export default function GameScreen() {
                   <View style={styles.modernCardHeader}>
                     <View style={styles.rankBadge}>
                       <Text style={styles.rankBadgeText}>
-                        {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`}
+                        {index === 0 ? "#1" : index === 1 ? "#2" : index === 2 ? "#3" : `#${index + 1}`}
                       </Text>
                     </View>
                     <Animated.Text style={[styles.modernPlayerName, isLeader && styles.leaderName, { opacity: titleShine }]}>{player.name}</Animated.Text>
@@ -897,15 +911,14 @@ export default function GameScreen() {
                   </View>
                   
                   {bestPlayerInfo && (
-                    <View style={styles.bestPlayerBadge}>
-                      <Text style={styles.bestPlayerIcon}>🏆</Text>
+                    <Animated.View style={[styles.bestPlayerBadge, { transform: [{ scale: pulseScale }] }]}>
                       <View style={styles.bestPlayerInfo}>
                         <Animated.Text style={[styles.bestPlayerTitle, { opacity: titleShine }]}>Mejor Jugador</Animated.Text>
                         <Animated.Text style={[styles.bestPlayerNameText, { opacity: titleShine }]}>
-                          {bestPlayerInfo.name.split(" ")[0]} • <Text style={{ color: getRarityColor(bestRarity) }}>{bestRarity}</Text> • <Text style={{ color: getRatingColor(bestPlayerInfo.rating) }}>{bestPlayerInfo.rating}</Text>{bestPlayerInfo.rating >= 90 ? " 🔥" : ""}
+                          {bestPlayerInfo.name.split(" ")[0]} - <Text style={{ color: getRarityColor(bestRarity) }}>{bestRarity}</Text> - <Text style={{ color: getRatingColor(bestPlayerInfo.rating) }}>{bestPlayerInfo.rating}</Text>
                         </Animated.Text>
                       </View>
-                    </View>
+                    </Animated.View>
                   )}
                 </View>
               );
@@ -933,8 +946,7 @@ export default function GameScreen() {
       <ScrollView style={styles.activeContainer}>
         <View style={[styles.timerContainer, isTimerCritical && styles.timerContainerCritical]}>
           <Animated.View style={{ transform: [{ scale: isTimerCritical ? timerPulseAnim : 1 }] }}>
-            <Text style={[styles.timerText, isTimerCritical && styles.timerTextCritical]}>⏱️ {timeRemaining}s</Text>
-
+            <Text style={[styles.timerText, isTimerCritical && styles.timerTextCritical]}>{timeRemaining}s</Text>
           </Animated.View>
         </View>
 
@@ -949,28 +961,28 @@ export default function GameScreen() {
 
           <View style={styles.hintsContainer}>
             {hints.map((hint, index) => (
-              <View key={index} style={styles.hint}>
+              <Animated.View key={index} style={[styles.hint, { opacity: titleShine }]}>
                 <Text style={styles.hintText}>
-                  {hint.type === "league" && `🏆 ${hint.value}`}
-                  {hint.type === "nationality" && `🌍 ${hint.value}`}
-                  {hint.type === "age" && `🎂 ${hint.value}`}
-                  {hint.type === "position" && `⚽ ${hint.value}`}
-                  {hint.type === "physical" && `📏 ${hint.value}`}
+                  {hint.type === "league" && hint.value}
+                  {hint.type === "nationality" && hint.value}
+                  {hint.type === "age" && hint.value}
+                  {hint.type === "position" && hint.value}
+                  {hint.type === "physical" && hint.value}
                 </Text>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </View>
 
         <View style={styles.biddingSection}>
-          <Text style={styles.basePriceText}>Precio Base: ${basePrice}M</Text>
+          <Animated.Text style={[styles.basePriceText, { opacity: titleShine }]}>Precio Base: ${basePrice}M</Animated.Text>
           {currentBid && (
-            <View style={styles.currentBidContainer}>
+            <Animated.View style={[styles.currentBidContainer, { transform: [{ scale: pulseAnim }] }]}>
               <Text style={styles.currentBidText}>
-                💵 Oferta Actual: ${currentBid.amount}M
+                Oferta Actual: ${currentBid.amount}M
               </Text>
               <Text style={styles.bidderText}>por {currentBid.playerName}</Text>
-            </View>
+            </Animated.View>
           )}
         </View>
 
@@ -980,7 +992,7 @@ export default function GameScreen() {
             <View key={player.id} style={styles.bidderCard}>
               <View style={styles.bidderInfo}>
                 <Text style={styles.bidderName}>{player.name}</Text>
-                <Text style={styles.bidderBudget}>💰 ${player.budget}M</Text>
+                <Text style={styles.bidderBudget}>${player.budget}M</Text>
               </View>
               <TouchableOpacity
                 style={styles.bidButtonGreen}
@@ -994,10 +1006,10 @@ export default function GameScreen() {
         })}
 
         {canSkip && (
-          <Animated.View style={[styles.skipButton, { opacity: titleShine }]}>
+          <Animated.View style={[styles.skipButton, { opacity: titleShine, transform: [{ scale: pulseAnim }] }]}>
             <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipButtonText}>
-                ⏭️ Saltar Jugador ({(skipsPerPosition[currentPosition] || 0)}/2)
+                SALTAR JUGADOR ({(skipsPerPosition[currentPosition] || 0)}/2)
               </Text>
             </TouchableOpacity>
           </Animated.View>
@@ -1011,7 +1023,7 @@ export default function GameScreen() {
               <View key={player.id} style={styles.compactPlayerCard}>
                 <View style={styles.compactPlayerHeader}>
                   <Text style={styles.compactPlayerName}>{player.name}</Text>
-                  <Text style={styles.compactPlayerBudget}>💰 ${player.budget}M</Text>
+                  <Text style={styles.compactPlayerBudget}>${player.budget}M</Text>
                 </View>
                 <Text style={styles.compactSquadCount}>
                   POR: {counts.Goalkeeper} | DEF: {counts.Defender} | MED: {counts.Midfielder} | DEL: {counts.Forward}
@@ -1047,9 +1059,17 @@ export default function GameScreen() {
       outputRange: [0.8, 1, 0.8],
     });
 
+    const winner = currentBid ? players.find(p => p.name === currentBid.playerName) : null;
+
     return (
       <ScrollView style={styles.revealedContainer}>
-        <Text style={styles.revealedTitle}>🎉 ¡Jugador Ganado!</Text>
+        <View style={styles.ornamentContainer}>
+          <View style={styles.ornament} />
+        </View>
+        <Animated.Text style={[styles.revealedTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>JUGADOR GANADO</Animated.Text>
+        <View style={styles.ornamentContainer}>
+          <View style={styles.ornament} />
+        </View>
         {targetFootballer && currentBid && (
           <View style={styles.cardContainer}>
             <Animated.View style={[
@@ -1095,7 +1115,7 @@ export default function GameScreen() {
               <View key={player.id} style={styles.compactPlayerCard}>
                 <View style={styles.compactPlayerHeader}>
                   <Text style={styles.compactPlayerName}>{player.name}</Text>
-                  <Text style={styles.compactPlayerBudget}>💰 ${player.budget}M</Text>
+                  <Text style={styles.compactPlayerBudget}>${player.budget}M</Text>
                 </View>
                 <Text style={styles.compactSquadCount}>
                   POR: {counts.Goalkeeper} | DEF: {counts.Defender} | MED: {counts.Midfielder} | DEL: {counts.Forward}
@@ -1120,6 +1140,12 @@ export default function GameScreen() {
         >
           <Text style={styles.continueRevealButtonText}>CONTINUAR</Text>
         </TouchableOpacity>
+        {winner && (
+          <View style={styles.winnerBudgetContainer}>
+            <Animated.Text style={[styles.winnerBudgetLabel, { opacity: textShine }]}>PRESUPUESTO RESTANTE</Animated.Text>
+            <Animated.Text style={[styles.winnerBudgetValue, { opacity: textShine }]}>${winner.budget}M</Animated.Text>
+          </View>
+        )}
       </ScrollView>
     );
   };
@@ -1207,7 +1233,13 @@ export default function GameScreen() {
     
     return (
     <ScrollView style={styles.transferContainer}>
-      <Animated.Text style={[styles.transferTitle, { opacity: titleShine }]}>🔄 Periodo de Transferencias</Animated.Text>
+      <View style={styles.ornamentContainer}>
+        <View style={styles.ornament} />
+      </View>
+      <Animated.Text style={[styles.transferTitle, { opacity: titleShine }]}>MERCADO DE PASES</Animated.Text>
+      <View style={styles.ornamentContainer}>
+        <View style={styles.ornament} />
+      </View>
       
       <View style={styles.transferForm}>
         <Animated.Text style={[styles.transferLabel, { opacity: titleShine }]}>Crear Oferta de Transferencia:</Animated.Text>
@@ -1388,12 +1420,12 @@ export default function GameScreen() {
           return (
             <View key={offer.id} style={styles.offerCard}>
               <View style={styles.offerHeader}>
-                <Text style={styles.offerTimerText}>⏱️ {timeLeft}s</Text>
+                <Text style={styles.offerTimerText}>{timeLeft}s</Text>
               </View>
-              <Text style={styles.offerText}>
+              <Animated.Text style={[styles.offerText, { opacity: titleShine }]}>
                 {fromPlayer?.name} ofrece {offeredFootballer?.name || "Jugador desconocido"}
                 {offer.offerAmount > 0 && ` + ${offer.offerAmount}M`} por {requestedFootballer?.name || "Jugador desconocido"} de {toPlayer?.name}
-              </Text>
+              </Animated.Text>
               <Text style={styles.offerPlayerNames}>
                 El que quiere comprar: {fromPlayer?.name}
               </Text>
@@ -1405,13 +1437,13 @@ export default function GameScreen() {
                   style={styles.acceptButton}
                   onPress={() => respondToTransfer(offer.id, true)}
                 >
-                  <Text style={styles.acceptButtonText}>✅ Aceptar</Text>
+                  <Text style={styles.acceptButtonText}>ACEPTAR</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.rejectButton}
                   onPress={() => respondToTransfer(offer.id, false)}
                 >
-                  <Text style={styles.rejectButtonText}>❌ Rechazar</Text>
+                  <Text style={styles.rejectButtonText}>RECHAZAR</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1422,12 +1454,14 @@ export default function GameScreen() {
         )}
       </View>
 
-      <TouchableOpacity 
-        style={[styles.auctionButton, { marginBottom: 20 }]}
-        onPress={() => setShowAuctionModal(true)}
-      >
-        <Text style={styles.auctionButtonText}>🔨 Iniciar Subasta</Text>
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+        <TouchableOpacity 
+          style={[styles.auctionButton, { marginBottom: 20 }]}
+          onPress={() => setShowAuctionModal(true)}
+        >
+          <Text style={styles.auctionButtonText}>INICIAR SUBASTA</Text>
+        </TouchableOpacity>
+      </Animated.View>
 
       <TouchableOpacity style={styles.continueButton} onPress={proceedFromTransfer}>
         <Text style={styles.continueButtonText}>Continuar al Siguiente Round</Text>
@@ -1441,7 +1475,7 @@ export default function GameScreen() {
             <View key={player.id} style={styles.compactPlayerCard}>
               <View style={styles.compactPlayerHeader}>
                 <Text style={styles.compactPlayerName}>{player.name}</Text>
-                <Text style={styles.compactPlayerBudget}>💰 ${player.budget}M</Text>
+                <Text style={styles.compactPlayerBudget}>${player.budget}M</Text>
               </View>
               <Text style={styles.compactSquadCount}>
                 POR: {counts.Goalkeeper} | DEF: {counts.Defender} | MED: {counts.Midfielder} | DEL: {counts.Forward}
@@ -1477,7 +1511,13 @@ export default function GameScreen() {
 
     return (
       <ScrollView style={styles.votingContainer}>
-        <Animated.Text style={[styles.votingTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>🗳️ ¡Vota por el Mejor Equipo!</Animated.Text>
+        <View style={styles.ornamentContainer}>
+          <View style={styles.ornament} />
+        </View>
+        <Animated.Text style={[styles.votingTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>VOTA POR EL MEJOR EQUIPO</Animated.Text>
+        <View style={styles.ornamentContainer}>
+          <View style={styles.ornament} />
+        </View>
 
         {!allVoted ? (
           <View>
@@ -1519,7 +1559,13 @@ export default function GameScreen() {
 
         {(showResults || allVoted) && (
           <View style={styles.resultsSection}>
-            <Animated.Text style={[styles.resultsTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>📊 Resultados:</Animated.Text>
+            <View style={styles.ornamentContainer}>
+              <View style={styles.ornament} />
+            </View>
+            <Animated.Text style={[styles.resultsTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>RESULTADOS</Animated.Text>
+            <View style={styles.ornamentContainer}>
+              <View style={styles.ornament} />
+            </View>
             {sortedByRatings.map((player, index) => {
               const votesReceived = voteResults[player.id];
               return (
@@ -1532,17 +1578,17 @@ export default function GameScreen() {
                 >
                   <View style={styles.finalPlayerHeader}>
                     <Text style={styles.finalPlayerRank}>
-                      {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`}
+                      {index === 0 ? "#1" : index === 1 ? "#2" : index === 2 ? "#3" : `#${index + 1}`}
                     </Text>
                     <Text style={styles.finalPlayerName}>{player.name}</Text>
-                    <Text style={styles.voteCount}>🗳️ {votesReceived}</Text>
+                    <Text style={styles.voteCount}>Votos: {votesReceived}</Text>
                   </View>
 
                   <Text style={styles.finalPlayerSpent}>
-                    💰 Gastó: ${player.totalSpent}M | Restante: ${player.budget}M
+                    Gastó: ${player.totalSpent}M | Restante: ${player.budget}M
                   </Text>
                   <Text style={styles.totalRatingText}>
-                    ⚡ Rating Total: {player.totalRating}
+                    Rating Total: {player.totalRating}
                   </Text>
 
                   <Text style={styles.squadTitle}>FORMACIÓN INICIAL</Text>
@@ -1614,41 +1660,47 @@ export default function GameScreen() {
     return (
       <View style={styles.introContainer}>
         <ScrollView contentContainerStyle={styles.introContent}>
-          <Text style={styles.introTitle}>⚽ CÓMO JUGAR ⚽</Text>
+          <View style={styles.ornamentContainer}>
+            <View style={styles.ornament} />
+          </View>
+          <Animated.Text style={[styles.introTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>CÓMO JUGAR</Animated.Text>
+          <View style={styles.ornamentContainer}>
+            <View style={styles.ornament} />
+          </View>
           
           <View style={styles.introSection}>
-            <Text style={styles.introSectionTitle}>🎴 RAREZAS DE CARTAS</Text>
+            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>RAREZAS DE CARTAS</Animated.Text>
             <View style={styles.rarityList}>
               <View style={[styles.rarityItem, { borderColor: COLORS.bronze }]}>
-                <Text style={styles.rarityItemText}>🟤 BRONZE (Rating 60-75)</Text>
+                <Text style={styles.rarityItemText}>BRONZE (Rating 60-75)</Text>
               </View>
               <View style={[styles.rarityItem, { borderColor: COLORS.silver }]}>
-                <Text style={styles.rarityItemText}>⚪ SILVER (Rating 76-82)</Text>
+                <Text style={styles.rarityItemText}>SILVER (Rating 76-82)</Text>
               </View>
               <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
-                <Text style={styles.rarityItemText}>🟡 GOLD (Rating 83-89)</Text>
+                <Text style={styles.rarityItemText}>GOLD (Rating 83-89)</Text>
               </View>
               <View style={[styles.rarityItem, { borderColor: COLORS.futties }]}>
-                <Text style={styles.rarityItemText}>💜 FUTTIES (Especiales)</Text>
+                <Text style={styles.rarityItemText}>FUTTIES (Especiales)</Text>
               </View>
               <View style={[styles.rarityItem, { borderColor: COLORS.legendRed }]}>
-                <Text style={styles.rarityItemText}>🔴 LEGEND (Leyendas)</Text>
+                <Text style={styles.rarityItemText}>LEGEND (Leyendas)</Text>
               </View>
               <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
-                <Text style={styles.rarityItemText}>👑 GOAT (Los Mejores)</Text>
+                <Text style={styles.rarityItemText}>GOAT (Los Mejores)</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.introSection}>
-            <Text style={styles.introSectionTitle}>🎯 OBJETIVO</Text>
+            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>OBJETIVO</Animated.Text>
             <Text style={styles.introText}>
               Forma el mejor equipo (4-3-3) comprando jugadores en subastas. Gestiona tu presupuesto de $1000M sabiamente.
             </Text>
           </View>
 
           <View style={styles.introSection}>
-            <Text style={styles.introSectionTitle}>💰 SUBASTAS</Text>
+            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>SUBASTAS</Animated.Text>
             <Text style={styles.introText}>
               • Cada jugador aparece con pistas
               • Incrementa la oferta en $5M
@@ -1658,18 +1710,20 @@ export default function GameScreen() {
           </View>
 
           <View style={styles.introSection}>
-            <Text style={styles.introSectionTitle}>🔄 TRANSFERENCIAS</Text>
+            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>TRANSFERENCIAS</Animated.Text>
             <Text style={styles.introText}>
               Entre posiciones puedes intercambiar jugadores con otros usuarios o subastar tus propios jugadores.
             </Text>
           </View>
 
-          <TouchableOpacity 
-            style={styles.introButton}
-            onPress={() => setShowIntro(false)}
-          >
-            <Text style={styles.introButtonText}>¡COMENZAR A JUGAR!</Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity 
+              style={styles.introButton}
+              onPress={() => setShowIntro(false)}
+            >
+              <Text style={styles.introButtonText}>COMENZAR A JUGAR</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </ScrollView>
       </View>
     );
@@ -1682,41 +1736,47 @@ export default function GameScreen() {
       ) : showRulesAfterSetup ? (
         <View style={styles.introContainer}>
           <ScrollView contentContainerStyle={styles.introContent}>
-            <Animated.Text style={[styles.introTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>⚽ CÓMO JUGAR ⚽</Animated.Text>
+            <View style={styles.ornamentContainer}>
+              <View style={styles.ornament} />
+            </View>
+            <Animated.Text style={[styles.introTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>CÓMO JUGAR</Animated.Text>
+            <View style={styles.ornamentContainer}>
+              <View style={styles.ornament} />
+            </View>
             
             <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>🎴 RAREZAS DE CARTAS</Animated.Text>
+              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>RAREZAS DE CARTAS</Animated.Text>
               <View style={styles.rarityList}>
                 <View style={[styles.rarityItem, { borderColor: COLORS.bronze }]}>
-                  <Text style={styles.rarityItemText}>🟤 BRONZE (Rating 60-75)</Text>
+                  <Text style={styles.rarityItemText}>BRONZE (Rating 60-75)</Text>
                 </View>
                 <View style={[styles.rarityItem, { borderColor: COLORS.silver }]}>
-                  <Text style={styles.rarityItemText}>⚪ SILVER (Rating 76-82)</Text>
+                  <Text style={styles.rarityItemText}>SILVER (Rating 76-82)</Text>
                 </View>
                 <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
-                  <Text style={styles.rarityItemText}>🟡 GOLD (Rating 83-89)</Text>
+                  <Text style={styles.rarityItemText}>GOLD (Rating 83-89)</Text>
                 </View>
                 <View style={[styles.rarityItem, { borderColor: COLORS.futties }]}>
-                  <Text style={styles.rarityItemText}>💜 FUTTIES (Especiales)</Text>
+                  <Text style={styles.rarityItemText}>FUTTIES (Especiales)</Text>
                 </View>
                 <View style={[styles.rarityItem, { borderColor: COLORS.legendRed }]}>
-                  <Text style={styles.rarityItemText}>🔴 LEGEND (Leyendas)</Text>
+                  <Text style={styles.rarityItemText}>LEGEND (Leyendas)</Text>
                 </View>
                 <View style={[styles.rarityItem, { borderColor: COLORS.gold }]}>
-                  <Text style={styles.rarityItemText}>👑 GOAT (Los Mejores)</Text>
+                  <Text style={styles.rarityItemText}>GOAT (Los Mejores)</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>🎯 OBJETIVO</Animated.Text>
+              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>OBJETIVO</Animated.Text>
               <Text style={styles.introText}>
                 Forma el mejor equipo (4-3-3) comprando jugadores en subastas. Gestiona tu presupuesto de $1000M sabiamente.
               </Text>
             </View>
 
             <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>💰 SUBASTAS</Animated.Text>
+              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>SUBASTAS</Animated.Text>
               <Text style={styles.introText}>
                 • Cada jugador aparece con pistas{"\n"}
                 • Incrementa la oferta en $5M{"\n"}
@@ -1726,18 +1786,20 @@ export default function GameScreen() {
             </View>
 
             <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>🔄 TRANSFERENCIAS</Animated.Text>
+              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>TRANSFERENCIAS</Animated.Text>
               <Text style={styles.introText}>
                 Entre posiciones puedes intercambiar jugadores con otros usuarios o subastar tus propios jugadores.
               </Text>
             </View>
 
-            <TouchableOpacity 
-              style={styles.introButton}
-              onPress={() => setShowRulesAfterSetup(false)}
-            >
-              <Text style={styles.introButtonText}>¡COMENZAR A JUGAR!</Text>
-            </TouchableOpacity>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <TouchableOpacity 
+                style={styles.introButton}
+                onPress={() => setShowRulesAfterSetup(false)}
+              >
+                <Text style={styles.introButtonText}>COMENZAR A JUGAR</Text>
+              </TouchableOpacity>
+            </Animated.View>
           </ScrollView>
         </View>
       ) : (
@@ -1856,10 +1918,10 @@ export default function GameScreen() {
       {activeAuction && (
         <View style={styles.modalOverlay}>
           <View style={styles.activeAuctionModal}>
-            <Text style={styles.activeAuctionTitle}>🔨 SUBASTA EN CURSO</Text>
+            <Animated.Text style={[styles.activeAuctionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>SUBASTA EN CURSO</Animated.Text>
             
             <View style={styles.activeAuctionTimer}>
-              <Text style={styles.activeAuctionTimerText}>⏱️ {auctionTimeRemaining}s</Text>
+              <Text style={styles.activeAuctionTimerText}>{auctionTimeRemaining}s</Text>
             </View>
             
             <View style={styles.activeAuctionPlayer}>
@@ -1887,7 +1949,7 @@ export default function GameScreen() {
                       index === 0 && styles.activeAuctionBidCardHighest
                     ]}>
                       <Text style={styles.activeAuctionBidPlayer}>
-                        {index === 0 ? "🥇 " : ""}{bid.playerName}
+                        {index === 0 ? "#1 " : ""}{bid.playerName}
                       </Text>
                       <Text style={styles.activeAuctionBidAmount}>${bid.amount}M</Text>
                     </View>
@@ -1908,7 +1970,7 @@ export default function GameScreen() {
                   <View key={player.id} style={styles.activeAuctionPlayerCard}>
                     <View style={styles.activeAuctionPlayerInfo}>
                       <Text style={styles.activeAuctionPlayerCardName}>{player.name}</Text>
-                      <Text style={styles.activeAuctionPlayerBudget}>💰 ${player.budget}M</Text>
+                      <Text style={styles.activeAuctionPlayerBudget}>${player.budget}M</Text>
                       {currentBid && (
                         <Text style={styles.activeAuctionPlayerCurrentBid}>Oferta: ${currentBid.amount}M</Text>
                       )}
@@ -3675,8 +3737,48 @@ const styles = StyleSheet.create({
   },
   introText: {
     fontSize: 16,
-    color: "#fff",
+    color: "#ddd",
     lineHeight: 24,
+  },
+  ornamentContainer: {
+    alignItems: "center" as const,
+    marginVertical: 8,
+  },
+  ornament: {
+    width: 200,
+    height: 4,
+    backgroundColor: COLORS.gold,
+    borderRadius: 2,
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  winnerBudgetContainer: {
+    alignItems: "center" as const,
+    marginTop: 30,
+    backgroundColor: COLORS.darkCard,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+  },
+  winnerBudgetLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: "#888",
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  winnerBudgetValue: {
+    fontSize: 36,
+    fontWeight: "900" as const,
+    color: COLORS.gold,
+    textShadowColor: COLORS.gold,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
   },
   rarityList: {
     gap: 12,
