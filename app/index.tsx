@@ -89,6 +89,8 @@ export default function GameScreen() {
   const [showIntro, setShowIntro] = useState(true);
   const [showRulesAfterSetup, setShowRulesAfterSetup] = useState(false);
   const titleGlowAnim = useState(new Animated.Value(0))[0];
+  const neonGlowAnim = useState(new Animated.Value(0))[0];
+  const fireGlowAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
     if (phase === "voting") {
@@ -112,7 +114,37 @@ export default function GameScreen() {
         }),
       ])
     ).start();
-  }, [titleGlowAnim]);
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(neonGlowAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+        Animated.timing(neonGlowAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fireGlowAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: false,
+        }),
+        Animated.timing(fireGlowAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  }, [titleGlowAnim, neonGlowAnim, fireGlowAnim]);
 
   useEffect(() => {
     if (phase === "revealed" && targetFootballer) {
@@ -794,31 +826,29 @@ export default function GameScreen() {
                          currentPosition === "Defender" ? "Defensas" :
                          currentPosition === "Midfielder" ? "Mediocampistas" : "Delanteros";
 
-    const titleShine = titleGlowAnim.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.7, 1, 0.7],
-    });
-
-    const pulseScale = pulseAnim.interpolate({
-      inputRange: [1, 1.05],
-      outputRange: [1, 1.05],
-    });
-
     return (
       <ScrollView style={styles.waitingContainer}>
         <View style={styles.statsHeader}>
           <View style={styles.statsHeaderGradient}>
             <View style={styles.ornamentContainer}>
-              <View style={styles.ornament} />
+              <Image
+                source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+                style={styles.ornamentImage}
+                resizeMode="contain"
+              />
             </View>
-            <Animated.Text style={[styles.statsTitle, { opacity: titleShine }]}>ESTADÍSTICAS</Animated.Text>
+            <Animated.Text style={[styles.statsTitle, styles.neonText]}>ESTADÍSTICAS</Animated.Text>
             <View style={styles.ornamentContainer}>
-              <View style={styles.ornament} />
+              <Image
+                source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+                style={styles.ornamentImage}
+                resizeMode="contain"
+              />
             </View>
             
-            <View style={styles.nextPositionCard}>
-              <Animated.Text style={[styles.nextPositionLabel, { opacity: titleShine }]}>PRÓXIMA POSICIÓN</Animated.Text>
-              <Animated.Text style={[styles.nextPositionValue, { opacity: titleShine }]}>{positionName}</Animated.Text>
+            <View style={[styles.nextPositionCard, styles.glowBorder]}>
+              <Text style={[styles.nextPositionLabel, styles.neonText]}>PRÓXIMA POSICIÓN</Text>
+              <Text style={[styles.nextPositionValue, styles.neonText]}>{positionName}</Text>
             </View>
             
             <View style={styles.skipsCard}>
@@ -865,7 +895,7 @@ export default function GameScreen() {
                         {index === 0 ? "#1" : index === 1 ? "#2" : index === 2 ? "#3" : `#${index + 1}`}
                       </Text>
                     </View>
-                    <Animated.Text style={[styles.modernPlayerName, isLeader && styles.leaderName, { opacity: titleShine }]}>{player.name}</Animated.Text>
+                    <Text style={[styles.modernPlayerName, isLeader && styles.leaderName, styles.neonText]}>{player.name}</Text>
                   </View>
                   
                   <View style={styles.statsRow}>
@@ -875,7 +905,7 @@ export default function GameScreen() {
                     </View>
                     <View style={styles.statBox}>
                       <Text style={styles.statBoxLabel}>PRESUPUESTO</Text>
-                      <Animated.Text style={[styles.statBoxValue, styles.budgetValue, { opacity: titleShine }]}>${player.budget}M</Animated.Text>
+                      <Text style={[styles.statBoxValue, styles.budgetValue, styles.neonText]}>${player.budget}M</Text>
                     </View>
                   </View>
                   
@@ -911,14 +941,14 @@ export default function GameScreen() {
                   </View>
                   
                   {bestPlayerInfo && (
-                    <Animated.View style={[styles.bestPlayerBadge, { transform: [{ scale: pulseScale }] }]}>
+                    <View style={styles.bestPlayerBadge}>
                       <View style={styles.bestPlayerInfo}>
-                        <Animated.Text style={[styles.bestPlayerTitle, { opacity: titleShine }]}>Mejor Jugador</Animated.Text>
-                        <Animated.Text style={[styles.bestPlayerNameText, { opacity: titleShine }]}>
+                        <Text style={[styles.bestPlayerTitle, styles.neonText]}>Mejor Jugador</Text>
+                        <Text style={[styles.bestPlayerNameText, styles.neonText]}>
                           {bestPlayerInfo.name.split(" ")[0]} - <Text style={{ color: getRarityColor(bestRarity) }}>{bestRarity}</Text> - <Text style={{ color: getRatingColor(bestPlayerInfo.rating) }}>{bestPlayerInfo.rating}</Text>
-                        </Animated.Text>
+                        </Text>
                       </View>
-                    </Animated.View>
+                    </View>
                   )}
                 </View>
               );
@@ -937,9 +967,11 @@ export default function GameScreen() {
     const eligiblePlayers = getEligiblePlayers();
     const canSkip = (skipsPerPosition[currentPosition] || 0) < 2;
     const isTimerCritical = timeRemaining <= 5;
-    const titleShine = titleGlowAnim.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.7, 1, 0.7],
+    const hasBids = currentBid !== null;
+    
+    const fireColor = fireGlowAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['rgba(255, 140, 0, 0.8)', 'rgba(255, 69, 0, 1)'],
     });
     
     return (
@@ -960,24 +992,40 @@ export default function GameScreen() {
           </View>
 
           <View style={styles.hintsContainer}>
-            {hints.map((hint, index) => (
-              <Animated.View key={index} style={[styles.hint, { opacity: titleShine }]}>
-                <Text style={styles.hintText}>
-                  {hint.type === "league" && hint.value}
-                  {hint.type === "nationality" && hint.value}
-                  {hint.type === "age" && hint.value}
-                  {hint.type === "position" && hint.value}
-                  {hint.type === "physical" && hint.value}
-                </Text>
-              </Animated.View>
-            ))}
+            {hints.map((hint, index) => {
+              const getHintEmoji = (type: string) => {
+                if (type === "league") return "⚽";
+                if (type === "nationality") return "🌍";
+                if (type === "age") return "📅";
+                if (type === "position") return "🎯";
+                if (type === "physical") return "💪";
+                return "";
+              };
+              return (
+                <View key={index} style={[styles.hint, styles.glowBorder]}>
+                  <Text style={styles.hintText}>
+                    {getHintEmoji(hint.type)} {hint.value}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 
         <View style={styles.biddingSection}>
-          <Animated.Text style={[styles.basePriceText, { opacity: titleShine }]}>Precio Base: ${basePrice}M</Animated.Text>
+          <Text style={[styles.basePriceText, styles.neonText]}>Precio Base: ${basePrice}M</Text>
           {currentBid && (
-            <Animated.View style={[styles.currentBidContainer, { transform: [{ scale: pulseAnim }] }]}>
+            <Animated.View style={[
+              styles.currentBidContainer,
+              hasBids && {
+                borderColor: fireColor,
+                shadowColor: fireColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 1,
+                shadowRadius: 15,
+                elevation: 10,
+              }
+            ]}>
               <Text style={styles.currentBidText}>
                 Oferta Actual: ${currentBid.amount}M
               </Text>
@@ -1006,13 +1054,13 @@ export default function GameScreen() {
         })}
 
         {canSkip && (
-          <Animated.View style={[styles.skipButton, { opacity: titleShine, transform: [{ scale: pulseAnim }] }]}>
+          <View style={[styles.skipButton, styles.skipButtonGlow]}>
             <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipButtonText}>
                 SALTAR JUGADOR ({(skipsPerPosition[currentPosition] || 0)}/2)
               </Text>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         )}
 
         <View style={styles.playersSquadSection}>
@@ -1054,21 +1102,24 @@ export default function GameScreen() {
       outputRange: [borderColor, '#fff'],
     });
 
-    const textShine = textShineAnim.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.8, 1, 0.8],
-    });
-
     const winner = currentBid ? players.find(p => p.name === currentBid.playerName) : null;
 
     return (
       <ScrollView style={styles.revealedContainer}>
         <View style={styles.ornamentContainer}>
-          <View style={styles.ornament} />
+          <Image
+            source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+            style={styles.ornamentImage}
+            resizeMode="contain"
+          />
         </View>
-        <Animated.Text style={[styles.revealedTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>JUGADOR GANADO</Animated.Text>
+        <Text style={[styles.revealedTitle, styles.neonText]}>JUGADOR GANADO</Text>
         <View style={styles.ornamentContainer}>
-          <View style={styles.ornament} />
+          <Image
+            source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+            style={styles.ornamentImage}
+            resizeMode="contain"
+          />
         </View>
         {targetFootballer && currentBid && (
           <View style={styles.cardContainer}>
@@ -1083,15 +1134,15 @@ export default function GameScreen() {
                 <Text style={styles.rarityTextNew}>{rarity}</Text>
               </View>
 
-              <Animated.Text style={[
+              <Text style={[
                 styles.revealedNameNew,
-                { opacity: textShine }
+                styles.neonText
               ]}>
                 {targetFootballer.name.toUpperCase()}
-              </Animated.Text>
+              </Text>
 
               <View style={styles.ratingCircle}>
-                <Animated.Text style={[styles.ratingValueNew, { color: ratingColor, opacity: textShine }]}>{targetFootballer.rating}</Animated.Text>
+                <Text style={[styles.ratingValueNew, { color: ratingColor }, styles.neonText]}>{targetFootballer.rating}</Text>
               </View>
 
               <View style={styles.priceContainer}>
@@ -1141,9 +1192,9 @@ export default function GameScreen() {
           <Text style={styles.continueRevealButtonText}>CONTINUAR</Text>
         </TouchableOpacity>
         {winner && (
-          <View style={styles.winnerBudgetContainer}>
-            <Animated.Text style={[styles.winnerBudgetLabel, { opacity: textShine }]}>PRESUPUESTO RESTANTE</Animated.Text>
-            <Animated.Text style={[styles.winnerBudgetValue, { opacity: textShine }]}>${winner.budget}M</Animated.Text>
+          <View style={[styles.winnerBudgetContainer, styles.glowBorder]}>
+            <Text style={[styles.winnerBudgetLabel, styles.neonText]}>PRESUPUESTO RESTANTE</Text>
+            <Text style={[styles.winnerBudgetValue, styles.neonText]}>${winner.budget}M</Text>
           </View>
         )}
       </ScrollView>
@@ -1226,23 +1277,27 @@ export default function GameScreen() {
 
   const renderTransferPhase = () => {
     const activeOffers = transferOffers.filter((o) => o.status === "pending");
-    const titleShine = titleGlowAnim.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.7, 1, 0.7],
-    });
     
     return (
     <ScrollView style={styles.transferContainer}>
       <View style={styles.ornamentContainer}>
-        <View style={styles.ornament} />
+        <Image
+          source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+          style={styles.ornamentImage}
+          resizeMode="contain"
+        />
       </View>
-      <Animated.Text style={[styles.transferTitle, { opacity: titleShine }]}>MERCADO DE PASES</Animated.Text>
+      <Text style={[styles.transferTitle, styles.neonText]}>MERCADO DE PASES</Text>
       <View style={styles.ornamentContainer}>
-        <View style={styles.ornament} />
+        <Image
+          source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+          style={styles.ornamentImage}
+          resizeMode="contain"
+        />
       </View>
       
-      <View style={styles.transferForm}>
-        <Animated.Text style={[styles.transferLabel, { opacity: titleShine }]}>Crear Oferta de Transferencia:</Animated.Text>
+      <View style={[styles.transferForm, styles.glowBorder]}>
+        <Text style={[styles.transferLabel, styles.neonText]}>Crear Oferta de Transferencia:</Text>
         
         <Text style={styles.inputLabel}>De (tu nombre):</Text>
         <TouchableOpacity
@@ -1409,7 +1464,7 @@ export default function GameScreen() {
       </View>
 
       <View style={styles.offersSection}>
-        <Animated.Text style={[styles.offersSectionTitle, { opacity: titleShine }]}>Ofertas Activas:</Animated.Text>
+        <Text style={[styles.offersSectionTitle, styles.neonText]}>Ofertas Activas:</Text>
         {activeOffers.map((offer) => {
           const fromPlayer = players.find((p) => p.id === offer.fromPlayerId);
           const toPlayer = players.find((p) => p.id === offer.toPlayerId);
@@ -1418,20 +1473,40 @@ export default function GameScreen() {
           const timeLeft = Math.max(0, Math.ceil((offer.expiresAt - Date.now()) / 1000));
 
           return (
-            <View key={offer.id} style={styles.offerCard}>
+            <View key={offer.id} style={[styles.offerCard, styles.glowBorder]}>
               <View style={styles.offerHeader}>
                 <Text style={styles.offerTimerText}>{timeLeft}s</Text>
               </View>
-              <Animated.Text style={[styles.offerText, { opacity: titleShine }]}>
-                {fromPlayer?.name} ofrece {offeredFootballer?.name || "Jugador desconocido"}
-                {offer.offerAmount > 0 && ` + ${offer.offerAmount}M`} por {requestedFootballer?.name || "Jugador desconocido"} de {toPlayer?.name}
-              </Animated.Text>
-              <Text style={styles.offerPlayerNames}>
-                El que quiere comprar: {fromPlayer?.name}
-              </Text>
-              <Text style={styles.offerPlayerNames}>
-                El que vende (gana dinero): {toPlayer?.name}
-              </Text>
+              <View style={styles.transferExplanation}>
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel2}>🤝 OFERTA DE:</Text>
+                  <Text style={styles.transferPlayerName}>{fromPlayer?.name}</Text>
+                </View>
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel2}>📤 OFRECE:</Text>
+                  <Text style={styles.transferValue}>{offeredFootballer?.name || "Jugador desconocido"}</Text>
+                </View>
+                {offer.offerAmount > 0 && (
+                  <View style={styles.transferRow}>
+                    <Text style={styles.transferLabel2}>💰 + DINERO:</Text>
+                    <Text style={styles.transferMoney}>${offer.offerAmount}M</Text>
+                  </View>
+                )}
+                <View style={styles.transferDivider} />
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel2}>🎯 PARA:</Text>
+                  <Text style={styles.transferPlayerName}>{toPlayer?.name}</Text>
+                </View>
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel2}>📥 PIDE:</Text>
+                  <Text style={styles.transferValue}>{requestedFootballer?.name || "Jugador desconocido"}</Text>
+                </View>
+                <View style={styles.transferDivider} />
+                <View style={styles.transferSummary}>
+                  <Text style={styles.transferSummaryText}>💸 {fromPlayer?.name} gasta: ${offer.offerAmount}M</Text>
+                  <Text style={styles.transferSummaryText}>💵 {toPlayer?.name} recibe: ${offer.offerAmount}M</Text>
+                </View>
+              </View>
               <View style={styles.offerActions}>
                 <TouchableOpacity
                   style={styles.acceptButton}
@@ -1454,21 +1529,19 @@ export default function GameScreen() {
         )}
       </View>
 
-      <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-        <TouchableOpacity 
-          style={[styles.auctionButton, { marginBottom: 20 }]}
-          onPress={() => setShowAuctionModal(true)}
-        >
-          <Text style={styles.auctionButtonText}>INICIAR SUBASTA</Text>
-        </TouchableOpacity>
-      </Animated.View>
+      <TouchableOpacity 
+        style={[styles.auctionButton, styles.glowBorder, { marginBottom: 20 }]}
+        onPress={() => setShowAuctionModal(true)}
+      >
+        <Text style={[styles.auctionButtonText, styles.neonText]}>INICIAR SUBASTA</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.continueButton} onPress={proceedFromTransfer}>
         <Text style={styles.continueButtonText}>Continuar al Siguiente Round</Text>
       </TouchableOpacity>
 
       <View style={styles.playersSquadSection}>
-        <Animated.Text style={[styles.squadsSectionTitle, { opacity: titleShine }]}>Plantillas Actuales:</Animated.Text>
+        <Text style={[styles.squadsSectionTitle, styles.neonText]}>Plantillas Actuales:</Text>
         {players.map((player) => {
           const counts = getPlayerPositionCounts(player);
           return (
@@ -1512,11 +1585,19 @@ export default function GameScreen() {
     return (
       <ScrollView style={styles.votingContainer}>
         <View style={styles.ornamentContainer}>
-          <View style={styles.ornament} />
+          <Image
+            source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+            style={styles.ornamentImage}
+            resizeMode="contain"
+          />
         </View>
-        <Animated.Text style={[styles.votingTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>VOTA POR EL MEJOR EQUIPO</Animated.Text>
+        <Text style={[styles.votingTitle, styles.neonText]}>VOTA POR EL MEJOR EQUIPO</Text>
         <View style={styles.ornamentContainer}>
-          <View style={styles.ornament} />
+          <Image
+            source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+            style={styles.ornamentImage}
+            resizeMode="contain"
+          />
         </View>
 
         {!allVoted ? (
@@ -1560,11 +1641,19 @@ export default function GameScreen() {
         {(showResults || allVoted) && (
           <View style={styles.resultsSection}>
             <View style={styles.ornamentContainer}>
-              <View style={styles.ornament} />
+              <Image
+                source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+                style={styles.ornamentImage}
+                resizeMode="contain"
+              />
             </View>
-            <Animated.Text style={[styles.resultsTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>RESULTADOS</Animated.Text>
+            <Text style={[styles.resultsTitle, styles.neonText]}>RESULTADOS</Text>
             <View style={styles.ornamentContainer}>
-              <View style={styles.ornament} />
+              <Image
+                source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+                style={styles.ornamentImage}
+                resizeMode="contain"
+              />
             </View>
             {sortedByRatings.map((player, index) => {
               const votesReceived = voteResults[player.id];
@@ -1661,15 +1750,23 @@ export default function GameScreen() {
       <View style={styles.introContainer}>
         <ScrollView contentContainerStyle={styles.introContent}>
           <View style={styles.ornamentContainer}>
-            <View style={styles.ornament} />
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+              style={styles.ornamentImage}
+              resizeMode="contain"
+            />
           </View>
-          <Animated.Text style={[styles.introTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>CÓMO JUGAR</Animated.Text>
+          <Text style={[styles.introTitle, styles.neonText]}>CÓMO JUGAR</Text>
           <View style={styles.ornamentContainer}>
-            <View style={styles.ornament} />
+            <Image
+              source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+              style={styles.ornamentImage}
+              resizeMode="contain"
+            />
           </View>
           
-          <View style={styles.introSection}>
-            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>RAREZAS DE CARTAS</Animated.Text>
+          <View style={[styles.introSection, styles.glowBorder]}>
+            <Text style={[styles.introSectionTitle, styles.neonText]}>RAREZAS DE CARTAS</Text>
             <View style={styles.rarityList}>
               <View style={[styles.rarityItem, { borderColor: COLORS.bronze }]}>
                 <Text style={styles.rarityItemText}>BRONZE (Rating 60-75)</Text>
@@ -1692,15 +1789,15 @@ export default function GameScreen() {
             </View>
           </View>
 
-          <View style={styles.introSection}>
-            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>OBJETIVO</Animated.Text>
+          <View style={[styles.introSection, styles.glowBorder]}>
+            <Text style={[styles.introSectionTitle, styles.neonText]}>OBJETIVO</Text>
             <Text style={styles.introText}>
               Forma el mejor equipo (4-3-3) comprando jugadores en subastas. Gestiona tu presupuesto de $1000M sabiamente.
             </Text>
           </View>
 
-          <View style={styles.introSection}>
-            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>SUBASTAS</Animated.Text>
+          <View style={[styles.introSection, styles.glowBorder]}>
+            <Text style={[styles.introSectionTitle, styles.neonText]}>SUBASTAS</Text>
             <Text style={styles.introText}>
               • Cada jugador aparece con pistas
               • Incrementa la oferta en $5M
@@ -1709,21 +1806,19 @@ export default function GameScreen() {
             </Text>
           </View>
 
-          <View style={styles.introSection}>
-            <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>TRANSFERENCIAS</Animated.Text>
+          <View style={[styles.introSection, styles.glowBorder]}>
+            <Text style={[styles.introSectionTitle, styles.neonText]}>TRANSFERENCIAS</Text>
             <Text style={styles.introText}>
               Entre posiciones puedes intercambiar jugadores con otros usuarios o subastar tus propios jugadores.
             </Text>
           </View>
 
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <TouchableOpacity 
-              style={styles.introButton}
-              onPress={() => setShowIntro(false)}
-            >
-              <Text style={styles.introButtonText}>COMENZAR A JUGAR</Text>
-            </TouchableOpacity>
-          </Animated.View>
+          <TouchableOpacity 
+            style={[styles.introButton, styles.glowBorder]}
+            onPress={() => setShowIntro(false)}
+          >
+            <Text style={[styles.introButtonText, styles.neonText]}>COMENZAR A JUGAR</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
     );
@@ -1737,15 +1832,23 @@ export default function GameScreen() {
         <View style={styles.introContainer}>
           <ScrollView contentContainerStyle={styles.introContent}>
             <View style={styles.ornamentContainer}>
-              <View style={styles.ornament} />
+              <Image
+                source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+                style={styles.ornamentImage}
+                resizeMode="contain"
+              />
             </View>
-            <Animated.Text style={[styles.introTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>CÓMO JUGAR</Animated.Text>
+            <Text style={[styles.introTitle, styles.neonText]}>CÓMO JUGAR</Text>
             <View style={styles.ornamentContainer}>
-              <View style={styles.ornament} />
+              <Image
+                source={{ uri: "https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/cjcszaf6zzg8ph1e12pqk" }}
+                style={styles.ornamentImage}
+                resizeMode="contain"
+              />
             </View>
             
-            <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>RAREZAS DE CARTAS</Animated.Text>
+            <View style={[styles.introSection, styles.glowBorder]}>
+              <Text style={[styles.introSectionTitle, styles.neonText]}>RAREZAS DE CARTAS</Text>
               <View style={styles.rarityList}>
                 <View style={[styles.rarityItem, { borderColor: COLORS.bronze }]}>
                   <Text style={styles.rarityItemText}>BRONZE (Rating 60-75)</Text>
@@ -1768,15 +1871,15 @@ export default function GameScreen() {
               </View>
             </View>
 
-            <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>OBJETIVO</Animated.Text>
+            <View style={[styles.introSection, styles.glowBorder]}>
+              <Text style={[styles.introSectionTitle, styles.neonText]}>OBJETIVO</Text>
               <Text style={styles.introText}>
                 Forma el mejor equipo (4-3-3) comprando jugadores en subastas. Gestiona tu presupuesto de $1000M sabiamente.
               </Text>
             </View>
 
-            <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>SUBASTAS</Animated.Text>
+            <View style={[styles.introSection, styles.glowBorder]}>
+              <Text style={[styles.introSectionTitle, styles.neonText]}>SUBASTAS</Text>
               <Text style={styles.introText}>
                 • Cada jugador aparece con pistas{"\n"}
                 • Incrementa la oferta en $5M{"\n"}
@@ -1785,21 +1888,19 @@ export default function GameScreen() {
               </Text>
             </View>
 
-            <View style={styles.introSection}>
-              <Animated.Text style={[styles.introSectionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>TRANSFERENCIAS</Animated.Text>
+            <View style={[styles.introSection, styles.glowBorder]}>
+              <Text style={[styles.introSectionTitle, styles.neonText]}>TRANSFERENCIAS</Text>
               <Text style={styles.introText}>
                 Entre posiciones puedes intercambiar jugadores con otros usuarios o subastar tus propios jugadores.
               </Text>
             </View>
 
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity 
-                style={styles.introButton}
-                onPress={() => setShowRulesAfterSetup(false)}
-              >
-                <Text style={styles.introButtonText}>COMENZAR A JUGAR</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity 
+              style={[styles.introButton, styles.glowBorder]}
+              onPress={() => setShowRulesAfterSetup(false)}
+            >
+              <Text style={[styles.introButtonText, styles.neonText]}>COMENZAR A JUGAR</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       ) : (
@@ -1917,8 +2018,8 @@ export default function GameScreen() {
       
       {activeAuction && (
         <View style={styles.modalOverlay}>
-          <View style={styles.activeAuctionModal}>
-            <Animated.Text style={[styles.activeAuctionTitle, { opacity: titleGlowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 1, 0.7] }) }]}>SUBASTA EN CURSO</Animated.Text>
+          <View style={[styles.activeAuctionModal, styles.glowBorder]}>
+            <Text style={[styles.activeAuctionTitle, styles.neonText]}>SUBASTA EN CURSO</Text>
             
             <View style={styles.activeAuctionTimer}>
               <Text style={styles.activeAuctionTimerText}>{auctionTimeRemaining}s</Text>
@@ -3744,16 +3845,88 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     marginVertical: 8,
   },
-  ornament: {
-    width: 200,
-    height: 4,
-    backgroundColor: COLORS.gold,
-    borderRadius: 2,
+  ornamentImage: {
+    width: 250,
+    height: 50,
+  },
+  neonText: {
+    textShadowColor: COLORS.gold,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
+  },
+  glowBorder: {
     shadowColor: COLORS.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.9,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  skipButtonGlow: {
+    borderWidth: 3,
+    borderColor: COLORS.gold,
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  transferExplanation: {
+    backgroundColor: "rgba(26, 40, 71, 0.5)",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  transferRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 8,
+  },
+  transferLabel2: {
+    fontSize: 13,
+    fontWeight: "700" as const,
+    color: COLORS.gold,
+    width: 120,
+  },
+  transferPlayerName: {
+    fontSize: 15,
+    fontWeight: "bold" as const,
+    color: "#fff",
+    flex: 1,
+    textAlign: "right" as const,
+  },
+  transferValue: {
+    fontSize: 14,
+    color: "#aaa",
+    flex: 1,
+    textAlign: "right" as const,
+  },
+  transferMoney: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    color: "#4CAF50",
+    flex: 1,
+    textAlign: "right" as const,
+  },
+  transferDivider: {
+    height: 1,
+    backgroundColor: COLORS.gold,
+    marginVertical: 12,
+    opacity: 0.3,
+  },
+  transferSummary: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: "#4CAF50",
+  },
+  transferSummaryText: {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: "#4CAF50",
+    marginBottom: 4,
   },
   winnerBudgetContainer: {
     alignItems: "center" as const,
